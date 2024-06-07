@@ -15,11 +15,77 @@
  * ```json
  * {
  *   "module_name": "@minecraft/server",
- *   "version": "1.3.0"
+ *   "version": "1.4.0"
  * }
  * ```
  *
  */
+/**
+ * A general purpose relative direction enumeration.
+ */
+export enum Direction {
+  /**
+   * @remarks
+   * Returns the block beneath (y - 1) of this item.
+   *
+   */
+  Down = "Down",
+  /**
+   * @remarks
+   * Returns the block to the east (x + 1) of this item.
+   *
+   */
+  East = "East",
+  /**
+   * @remarks
+   * Returns the block to the east (z + 1) of this item.
+   *
+   */
+  North = "North",
+  /**
+   * @remarks
+   * Returns the block to the south (z - 1) of this item.
+   *
+   */
+  South = "South",
+  /**
+   * @remarks
+   * Returns the block above (y + 1) of this item.
+   *
+   */
+  Up = "Up",
+  /**
+   * @remarks
+   * Returns the block to the west (x - 1) of this item.
+   *
+   */
+  West = "West",
+}
+
+/**
+ * Specifies a mechanism for displaying scores on a scoreboard.
+ */
+export enum DisplaySlotId {
+  /**
+   * @remarks
+   * Displays the score below the player's name.
+   *
+   */
+  BelowName = "BelowName",
+  /**
+   * @remarks
+   * Displays the score as a list on the pause screen.
+   *
+   */
+  List = "List",
+  /**
+   * @remarks
+   * Displays the score on the side of the player's screen.
+   *
+   */
+  Sidebar = "Sidebar",
+}
+
 export enum EntityDamageCause {
   anvil = "anvil",
   blockExplosion = "blockExplosion",
@@ -127,6 +193,99 @@ export enum ItemLockMode {
 }
 
 /**
+ * Used for specifying a sort order for how to display an
+ * objective and its list of participants.
+ */
+export enum ObjectiveSortOrder {
+  /**
+   * @remarks
+   * Objective participant list is displayed in ascending (e.g.,
+   * A-Z) order.
+   *
+   */
+  Ascending = 0,
+  /**
+   * @remarks
+   * Objective participant list is displayed in descending (e.g.,
+   * Z-A) order.
+   *
+   */
+  Descending = 1,
+}
+
+/**
+ * Contains objectives and participants for the scoreboard.
+ */
+export enum ScoreboardIdentityType {
+  /**
+   * @remarks
+   * This scoreboard participant is tied to an entity.
+   *
+   */
+  Entity = "Entity",
+  /**
+   * @remarks
+   * This scoreboard participant is tied to a pseudo player
+   * entity - typically this is used to store scores as data or
+   * as abstract progress.
+   *
+   */
+  FakePlayer = "FakePlayer",
+  /**
+   * @remarks
+   * This scoreboard participant is tied to a player.
+   *
+   */
+  Player = "Player",
+}
+
+/**
+ * Describes where the script event originated from.
+ */
+export enum ScriptEventSource {
+  /**
+   * @remarks
+   * The script event originated from a Block such as a Command
+   * Block.
+   *
+   */
+  Block = "Block",
+  /**
+   * @remarks
+   * The script event originated from an Entity such as a Player,
+   * Command Block Minecart or Animation Controller.
+   *
+   */
+  Entity = "Entity",
+  /**
+   * @remarks
+   * The script event originated from an NPC dialogue.
+   *
+   */
+  NPCDialogue = "NPCDialogue",
+  /**
+   * @remarks
+   * The script event originated from the server, such as from a
+   * runCommand API call or a dedicated server console.
+   *
+   */
+  Server = "Server",
+}
+
+/**
+ * Provides numeric values for common periods in the Minecraft
+ * day.
+ */
+export enum TimeOfDay {
+  Day = 1000,
+  Noon = 6000,
+  Sunset = 12000,
+  Night = 13000,
+  Midnight = 18000,
+  Sunrise = 23000,
+}
+
+/**
  * Represents a block in a dimension. A block represents a
  * unique X, Y, and Z within a dimension and get/sets the state
  * of the block at that location. This type was significantly
@@ -153,6 +312,10 @@ export class Block {
    * block.
    *
    * @throws This property can throw when used.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    */
   readonly permutation: BlockPermutation;
   /**
@@ -186,8 +349,22 @@ export class Block {
    * Returns the component object if it is present on the
    * particular block.
    * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    */
   getComponent(componentName: string): BlockComponent | undefined;
+  /**
+   * @remarks
+   * Returns true if this reference to a block is still valid
+   * (for example, if the block is unloaded, references to that
+   * block will no longer be valid.)
+   *
+   * @returns
+   * True if this block object is still working and valid.
+   */
+  isValid(): boolean;
   /**
    * @remarks
    * Sets the block in the dimension to the state of the
@@ -199,6 +376,10 @@ export class Block {
    * Permutation that contains a set of property states for the
    * Block.
    * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    */
   setPermutation(permutation: BlockPermutation): void;
 }
@@ -375,6 +556,17 @@ export class Component {
    *
    */
   readonly typeId: string;
+  /**
+   * @remarks
+   * Returns whether the component is valid. A component is
+   * considered valid if its owner is valid, in addition to any
+   * addition to any additional validation required by the
+   * component.
+   *
+   * @returns
+   * Whether the component is valid.
+   */
+  isValid(): boolean;
 }
 
 /**
@@ -448,6 +640,14 @@ export class Container {
    * ```
    */
   getItem(slot: number): ItemStack | undefined;
+  /**
+   * @remarks
+   * Returns whether a container object (or the entity or block
+   * that this container is associated with) is still available
+   * for use in this context.
+   *
+   */
+  isValid(): boolean;
   /**
    * @remarks
    * Moves an item from one slot to another, potentially across
@@ -553,7 +753,6 @@ export class Dimension {
    * @remarks
    * Identifier of the dimension.
    *
-   * @throws This property can throw when used.
    */
   readonly id: string;
   /**
@@ -574,8 +773,25 @@ export class Dimension {
    * trying to interact with a position outside of dimension
    * height range
    *
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    */
   getBlock(location: Vector3): Block | undefined;
+  /**
+   * @remarks
+   * Gets the first block that intersects with a vector emanating
+   * from a location.
+   *
+   * @param location
+   * Location from where to initiate the ray check.
+   * @param direction
+   * Vector direction to cast the ray.
+   * @param options
+   * Additional options for processing this raycast query.
+   */
+  getBlockFromRay(location: Vector3, direction: Vector3, options?: BlockRaycastOptions): BlockRaycastHit | undefined;
   /**
    * @remarks
    * Returns a set of entities based on a set of conditions
@@ -656,6 +872,15 @@ export class Dimension {
   getEntitiesAtBlockLocation(location: Vector3): Entity[];
   /**
    * @remarks
+   * Gets entities that intersect with a specified vector
+   * emanating from a location.
+   *
+   * @param options
+   * Additional options for processing this raycast query.
+   */
+  getEntitiesFromRay(location: Vector3, direction: Vector3, options?: EntityRaycastOptions): EntityRaycastHit[];
+  /**
+   * @remarks
    * Returns a set of players based on a set of conditions
    * defined via the EntityQueryOptions set of filter criteria.
    *
@@ -686,6 +911,8 @@ export class Dimension {
    * command. Note that in many cases, if the command does not
    * operate (e.g., a target selector found no matches), this
    * method will not throw an exception.
+   *
+   * {@link CommandError}
    */
   runCommand(commandString: string): CommandResult;
   /**
@@ -724,6 +951,10 @@ export class Dimension {
    * @returns
    * Newly created entity at the specified location.
    * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    * @example createOldHorse.ts
    * ```typescript
    *   const overworld = mc.world.getDimension("overworld");
@@ -777,6 +1008,10 @@ export class Dimension {
    * @returns
    * Newly created item stack entity at the specified location.
    * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
    * @example itemStacks.ts
    * ```typescript
    * const overworld = mc.world.getDimension('overworld');
@@ -895,7 +1130,6 @@ export class Entity {
    * property is accessible even if {@link Entity.isValid} is
    * false.
    *
-   * @throws This property can throw when used.
    */
   readonly id: string;
   /**
@@ -915,11 +1149,17 @@ export class Entity {
   nameTag: string;
   /**
    * @remarks
-   * Unique identifier of the type of the entity - for example,
+   * Returns a scoreboard identity that represents this entity.
+   * Will remain valid when the entity is killed.
+   *
+   */
+  readonly scoreboardIdentity?: ScoreboardIdentity;
+  /**
+   * @remarks
+   * Identifier of the type of the entity - for example,
    * 'minecraft:skeleton'. This property is accessible even if
    * {@link Entity.isValid} is false.
    *
-   * @throws This property can throw when used.
    */
   readonly typeId: string;
   /**
@@ -1123,6 +1363,19 @@ export class Entity {
   clearVelocity(): void;
   /**
    * @remarks
+   * Returns the first intersecting block from the direction that
+   * this entity is looking at.
+   *
+   * @param options
+   * Additional configuration options for the ray cast.
+   * @returns
+   * Returns the first intersecting block from the direction that
+   * this entity is looking at.
+   * @throws This function can throw errors.
+   */
+  getBlockFromViewDirection(options?: BlockRaycastOptions): BlockRaycastHit | undefined;
+  /**
+   * @remarks
    * Gets a component (that represents additional capabilities)
    * for an entity.
    *
@@ -1170,6 +1423,19 @@ export class Entity {
    * @throws This function can throw errors.
    */
   getEffects(): Effect[];
+  /**
+   * @remarks
+   * Gets the entities that this entity is looking at by
+   * performing a ray cast from the view of this entity.
+   *
+   * @param options
+   * Additional configuration options for the ray cast.
+   * @returns
+   * Returns a set of entities from the direction that this
+   * entity is looking at.
+   * @throws This function can throw errors.
+   */
+  getEntitiesFromViewDirection(options?: EntityRaycastOptions): EntityRaycastHit[];
   /**
    * @remarks
    * Returns the current location of the head component of this
@@ -1245,6 +1511,16 @@ export class Entity {
   hasTag(tag: string): boolean;
   /**
    * @remarks
+   * Returns whether the entity can be manipulated by script. A
+   * Player is considered valid when it's EntityLifetimeState is
+   * set to Loaded.
+   *
+   * @returns
+   * Whether the entity is valid.
+   */
+  isValid(): boolean;
+  /**
+   * @remarks
    * Kills this entity. The entity will drop loot as normal.
    *
    * This function can't be called in read-only mode.
@@ -1315,6 +1591,10 @@ export class Entity {
    * A command result containing whether the command was
    * successful.
    * @throws This function can throw errors.
+   *
+   * {@link CommandError}
+   *
+   * {@link Error}
    */
   runCommand(commandString: string): CommandResult;
   /**
@@ -1470,6 +1750,12 @@ export class EntityAttributeComponent extends EntityComponent {
 // @ts-ignore Class inheritance allowed for native defined classes
 export class EntityBaseMovementComponent extends EntityComponent {
   private constructor();
+  /**
+   * @remarks
+   * Maximum turn rate for this movement modality of the mob.
+   *
+   * @throws This property can throw when used.
+   */
   readonly maxTurn: number;
 }
 
@@ -1532,6 +1818,60 @@ export class EntityComponent extends Component {
 }
 
 /**
+ * Contains data related to the death of an entity in the game.
+ */
+export class EntityDieAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * If specified, provides more information on the source of
+   * damage that caused the death of this entity.
+   *
+   */
+  readonly damageSource: EntityDamageSource;
+  /**
+   * @remarks
+   * Now-dead entity object.
+   *
+   */
+  readonly deadEntity: Entity;
+}
+
+/**
+ * Supports registering for an event that fires after an entity
+ * has died.
+ */
+export class EntityDieAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Subscribes to an event that fires when an entity dies.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param callback
+   * Function to call when an entity dies.
+   * @param options
+   * Additional filtering options for when the subscription
+   * fires.
+   * @returns
+   * Returns the closure that can be used in future downstream
+   * calls to unsubscribe.
+   */
+  subscribe(callback: (arg: EntityDieAfterEvent) => void, options?: EntityEventOptions): (arg: EntityDieAfterEvent) => void;
+  /**
+   * @remarks
+   * Stops this event from calling your function when an entity
+   * dies.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EntityDieAfterEvent) => void): void;
+}
+
+/**
  * When added, this component signifies that this entity
  * doesn't take damage from fire.
  */
@@ -1559,6 +1899,8 @@ export class EntityFlyingSpeedComponent extends EntityComponent {
   private constructor();
   /**
    * @remarks
+   * Current value of the flying speed of the associated entity.
+   *
    * This property can't be edited in read-only mode.
    *
    */
@@ -1574,6 +1916,9 @@ export class EntityFrictionModifierComponent extends EntityComponent {
   private constructor();
   /**
    * @remarks
+   * Current value of the friction modifier of the associated
+   * entity.
+   *
    * This property can't be edited in read-only mode.
    *
    */
@@ -1590,7 +1935,9 @@ export class EntityGroundOffsetComponent extends EntityComponent {
   private constructor();
   /**
    * @remarks
-   * Value of this particular ground offset.
+   * Value of this particular ground offset. Note that this value
+   * is effectively read only; setting the ground offset value
+   * will not have an impact on the related entity.
    *
    * This property can't be edited in read-only mode.
    *
@@ -1626,12 +1973,216 @@ export class EntityHealableComponent extends EntityComponent {
 }
 
 /**
+ * Contains information related to an entity when its health
+ * changes. Warning: don't change the health of an entity in
+ * this event, or it will cause an infinite loop!
+ */
+export class EntityHealthChangedAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Entity whose health changed.
+   *
+   */
+  readonly entity: Entity;
+  /**
+   * @remarks
+   * New health value of the entity.
+   *
+   */
+  readonly newValue: number;
+  /**
+   * @remarks
+   * Old health value of the entity.
+   *
+   */
+  readonly oldValue: number;
+}
+
+/**
+ * Manages callbacks that are connected to when the health of
+ * an entity changes.
+ */
+export class EntityHealthChangedAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when the health of an
+   * entity changes.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EntityHealthChangedAfterEvent) => void, options?: EntityEventOptions): (arg: EntityHealthChangedAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when the health of an
+   * entity changes.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EntityHealthChangedAfterEvent) => void): void;
+}
+
+/**
  * Defines the health properties of an entity.
  */
 // @ts-ignore Class inheritance allowed for native defined classes
 export class EntityHealthComponent extends EntityAttributeComponent {
   private constructor();
   static readonly componentId = "minecraft:health";
+}
+
+/**
+ * Contains information related to an entity hitting a block.
+ */
+export class EntityHitBlockAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Face of the block that was hit.
+   *
+   */
+  readonly blockFace: Direction;
+  /**
+   * @remarks
+   * Entity that made the attack.
+   *
+   */
+  readonly damagingEntity: Entity;
+  /**
+   * @remarks
+   * Block that was hit by the attack.
+   *
+   */
+  readonly hitBlock: Block;
+}
+
+/**
+ * Manages callbacks that are connected to when an entity hits
+ * a block.
+ */
+export class EntityHitBlockAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an entity hits a
+   * block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EntityHitBlockAfterEvent) => void, options?: EntityEventOptions): (arg: EntityHitBlockAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an entity hits a
+   * block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EntityHitBlockAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an entity hitting (melee
+ * attacking) another entity.
+ */
+export class EntityHitEntityAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Entity that made a hit/melee attack.
+   *
+   */
+  readonly damagingEntity: Entity;
+  /**
+   * @remarks
+   * Entity that was hit by the attack.
+   *
+   */
+  readonly hitEntity: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when an entity makes
+ * a melee attack on another entity.
+ */
+export class EntityHitEntityAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an entity hits
+   * another entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EntityHitEntityAfterEvent) => void, options?: EntityEventOptions): (arg: EntityHitEntityAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an entity makes a
+   * melee attack on another entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EntityHitEntityAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an entity getting hurt.
+ */
+export class EntityHurtAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Describes the amount of damage caused.
+   *
+   */
+  readonly damage: number;
+  /**
+   * @remarks
+   * Source information on the entity that may have applied this
+   * damage.
+   *
+   */
+  readonly damageSource: EntityDamageSource;
+  /**
+   * @remarks
+   * Entity that was hurt.
+   *
+   */
+  readonly hurtEntity: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when an entity is
+ * hurt.
+ */
+export class EntityHurtAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an entity is hurt.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EntityHurtAfterEvent) => void, options?: EntityEventOptions): (arg: EntityHurtAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an entity is hurt.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EntityHurtAfterEvent) => void): void;
 }
 
 /**
@@ -1972,6 +2523,8 @@ export class EntitySkinIdComponent extends EntityComponent {
   private constructor();
   /**
    * @remarks
+   * Returns the value of the skin Id identifier of the entity.
+   *
    * This property can't be edited in read-only mode.
    *
    */
@@ -2180,6 +2733,60 @@ export class IPlayerSpawnAfterEventSignal {
 }
 
 /**
+ * Contains information related to a chargeable item completing
+ * being charged.
+ */
+export class ItemCompleteUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Returns the item stack that has completed charging.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+  /**
+   * @remarks
+   * Returns the time, in ticks, for the remaining duration left
+   * before the charge completes its cycle.
+   *
+   */
+  readonly useDuration: number;
+}
+
+/**
+ * Manages callbacks that are connected to the completion of
+ * charging for a chargeable item.
+ */
+export class ItemCompleteUseAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a chargeable item
+   * completes charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemCompleteUseAfterEvent) => void): (arg: ItemCompleteUseAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a chargeable item
+   * completes charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemCompleteUseAfterEvent) => void): void;
+}
+
+/**
  * Base class for item components.
  */
 // @ts-ignore Class inheritance allowed for native defined classes
@@ -2188,19 +2795,64 @@ export class ItemComponent extends Component {
 }
 
 /**
+ * Contains information related to a chargeable item when the
+ * player has finished using the item and released the build
+ * action.
+ */
+export class ItemReleaseUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Returns the item stack that triggered this item event.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+  /**
+   * @remarks
+   * Returns the time, in ticks, for the remaining duration left
+   * before the charge completes its cycle.
+   *
+   */
+  readonly useDuration: number;
+}
+
+/**
+ * Manages callbacks that are connected to the releasing of
+ * charging for a chargeable item.
+ */
+export class ItemReleaseUseAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a chargeable item
+   * is released from charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemReleaseUseAfterEvent) => void): (arg: ItemReleaseUseAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a chargeable item
+   * is released from charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemReleaseUseAfterEvent) => void): void;
+}
+
+/**
  * Defines a collection of items.
  */
 export class ItemStack {
-  /**
-   * @remarks
-   * Number of the items in the stack. Valid values range between
-   * 1-255. The provided value will be clamped to the item's
-   * maximum stack size.
-   *
-   * @throws
-   * Throws if the value is outside the range of 1-255.
-   */
-  readonly amount: number;
   /**
    * @remarks
    * Returns whether the item is stackable. An item is considered
@@ -2211,35 +2863,12 @@ export class ItemStack {
   readonly isStackable: boolean;
   /**
    * @remarks
-   * Gets or sets whether the item is kept on death.
-   *
-   */
-  readonly keepOnDeath: boolean;
-  /**
-   * @remarks
-   * Gets or sets the item's lock mode. The default value is
-   * `ItemLockMode.none`.
-   *
-   */
-  readonly lockMode: ItemLockMode;
-  /**
-   * @remarks
    * The maximum stack size. This value varies depending on the
    * type of item. For example, torches have a maximum stack size
    * of 64, while eggs have a maximum stack size of 16.
    *
    */
   readonly maxAmount: number;
-  /**
-   * @remarks
-   * Given name of this stack of items. The name tag is displayed
-   * when hovering over the item. Setting the name tag to an
-   * empty string or `undefined` will remove the name tag.
-   *
-   * @throws
-   * Throws if the length exceeds 255 characters.
-   */
-  readonly nameTag?: string;
   /**
    * @remarks
    * The type of the item.
@@ -2282,7 +2911,7 @@ export class ItemStack {
    * The identifier of the component (e.g., 'minecraft:food') to
    * retrieve. If no namespace prefix is specified, 'minecraft:'
    * is assumed. If the component is not present on the item
-   * stack, undefined is returned.
+   * stack or doesn't exist, undefined is returned.
    * @example durability.ts
    * ```typescript
    * // Get the maximum durability of a custom sword item
@@ -2299,6 +2928,16 @@ export class ItemStack {
    *
    */
   getComponents(): ItemComponent[];
+  /**
+   * @remarks
+   * Returns the lore value - a secondary display string - for an
+   * ItemStack.
+   *
+   * @returns
+   * An array of lore lines. If the item does not have lore,
+   * returns an empty array.
+   */
+  getLore(): string[];
   /**
    * @remarks
    * Returns true if the specified component is present on this
@@ -2318,8 +2957,284 @@ export class ItemStack {
    * item stacks. The amount of each item stack is not taken into
    * consideration.
    *
+   * @param itemStack
+   * ItemStack to check stacking compatability with.
+   * @returns
+   * True if the Item Stack is stackable with the itemStack
+   * passed in.
    */
   isStackableWith(itemStack: ItemStack): boolean;
+  /**
+   * @remarks
+   * Sets the lore value - a secondary display string - for an
+   * ItemStack. The lore list is cleared if set to an empty
+   * string or undefined.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param loreList
+   * List of lore lines. Each element in the list represents a
+   * new line. The maximum lore line count is 20. The maximum
+   * lore line length is 50 characters.
+   * @throws This function can throw errors.
+   * @example diamondAwesomeSword.ts
+   * ```typescript
+   *   const diamondAwesomeSword = new mc.ItemStack(mc.MinecraftItemTypes.diamondSword, 1);
+   *   let players = mc.world.getAllPlayers();
+   *
+   *   diamondAwesomeSword.setLore(["§c§lDiamond Sword of Awesome§r", "+10 coolness", "§p+4 shiny§r"]);
+   *
+   *   // hover over/select the item in your inventory to see the lore.
+   *   const inventory = players[0].getComponent("inventory") as mc.EntityInventoryComponent;
+   *   inventory.container.setItem(0, diamondAwesomeSword);
+   *
+   *   let item = inventory.container.getItem(0);
+   *
+   *   if (item) {
+   *     let enchants = item.getComponent("minecraft:enchantments") as mc.ItemEnchantsComponent;
+   *     let knockbackEnchant = new mc.Enchantment("knockback", 3);
+   *     enchants.enchantments.addEnchantment(knockbackEnchant);
+   *   }
+   * ```
+   * @example multilineLore.ts
+   * ```typescript
+   * // Set the lore of an item to multiple lines of text
+   * const itemStack = new ItemStack("minecraft:diamond_sword");
+   * itemStack.setLore(["Line 1", "Line 2", "Line 3"]);
+   * ```
+   */
+  setLore(loreList?: string[]): void;
+}
+
+/**
+ * Contains information related to a chargeable item starting
+ * to be charged.
+ */
+export class ItemStartUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The impacted item stack that is starting to be charged.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+  /**
+   * @remarks
+   * Returns the time, in ticks, for the remaining duration left
+   * before the charge completes its cycle.
+   *
+   */
+  readonly useDuration: number;
+}
+
+/**
+ * Manages callbacks that are connected to the start of
+ * charging for a chargeable item.
+ */
+export class ItemStartUseAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a chargeable item
+   * starts charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemStartUseAfterEvent) => void): (arg: ItemStartUseAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a chargeable item
+   * starts charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemStartUseAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an item being used on a
+ * block. This event fires when a player presses the the Use
+ * Item / Place Block button to successfully use an item or
+ * place a block. Fires for the first block that is interacted
+ * with when performing a build action. Note: This event cannot
+ * be used with Hoe or Axe items.
+ */
+export class ItemStartUseOnAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The block that the item is used on.
+   *
+   */
+  readonly block: Block;
+  /**
+   * @remarks
+   * The face of the block that an item is being used on.
+   *
+   */
+  readonly blockFace: Direction;
+  /**
+   * @remarks
+   * The impacted item stack that is starting to be used.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+}
+
+/**
+ * Manages callbacks that are connected to an item starting
+ * being used on a block event.
+ */
+export class ItemStartUseOnAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an item is used on
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemStartUseOnAfterEvent) => void): (arg: ItemStartUseOnAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an item is used on
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemStartUseOnAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to a chargeable item has
+ * finished an items use cycle, or when the player has released
+ * the use action with the item.
+ */
+export class ItemStopUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The impacted item stack that is stopping being charged.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+  /**
+   * @remarks
+   * Returns the time, in ticks, for the remaining duration left
+   * before the charge completes its cycle.
+   *
+   */
+  readonly useDuration: number;
+}
+
+/**
+ * Manages callbacks that are connected to the stopping of
+ * charging for an item that has a registered
+ * minecraft:chargeable component.
+ */
+export class ItemStopUseAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a chargeable item
+   * stops charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemStopUseAfterEvent) => void): (arg: ItemStopUseAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a chargeable item
+   * stops charging.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemStopUseAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an item that has stopped
+ * being used on a block. This event fires when a player
+ * successfully uses an item or places a block by pressing the
+ * Use Item / Place Block button. If multiple blocks are
+ * placed, this event will only occur once at the beginning of
+ * the block placement. Note: This event cannot be used with
+ * Hoe or Axe items.
+ */
+export class ItemStopUseOnAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The block that the item is used on.
+   *
+   */
+  readonly block: Block;
+  /**
+   * @remarks
+   * The impacted item stack that is being used on a block.
+   *
+   */
+  readonly itemStack?: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+}
+
+/**
+ * Manages callbacks that are connected to an item stops used
+ * on a block event.
+ */
+export class ItemStopUseOnAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an item stops being
+   * used on a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemStopUseOnAfterEvent) => void): (arg: ItemStopUseOnAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an item is used on
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemStopUseOnAfterEvent) => void): void;
 }
 
 /**
@@ -2334,6 +3249,197 @@ export class ItemType {
    *
    */
   readonly id: string;
+}
+
+/**
+ * Contains information related to an item being used. This
+ * event fires when an item is successfully used by a player.
+ */
+export class ItemUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The impacted item stack that is being used.
+   *
+   */
+  itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+}
+
+/**
+ * Manages callbacks that are connected to an item use event.
+ */
+export class ItemUseAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an item is used.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemUseAfterEvent) => void): (arg: ItemUseAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an item is used.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemUseAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an item being used.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class ItemUseBeforeEvent extends ItemUseAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * If set to true, this will cancel the item use behavior.
+   *
+   */
+  cancel: boolean;
+}
+
+/**
+ * Manages callbacks that fire before an item is used.
+ */
+export class ItemUseBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called before an item is used.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemUseBeforeEvent) => void): (arg: ItemUseBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called before an item is used.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemUseBeforeEvent) => void): void;
+}
+
+/**
+ * Contains information related to an item being used on a
+ * block. This event fires when an item is successfully used on
+ * a block by a player.
+ */
+export class ItemUseOnAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The block that the item is used on.
+   *
+   */
+  readonly block: Block;
+  /**
+   * @remarks
+   * The face of the block that an item is being used on.
+   *
+   */
+  readonly blockFace: Direction;
+  /**
+   * @remarks
+   * Location relative to the bottom north-west corner of the
+   * block where the item is placed.
+   *
+   */
+  readonly faceLocation: Vector3;
+  /**
+   * @remarks
+   * The impacted item stack that is being used on a block.
+   *
+   */
+  readonly itemStack: ItemStack;
+  /**
+   * @remarks
+   * Returns the source entity that triggered this item event.
+   *
+   */
+  readonly source: Player;
+}
+
+/**
+ * Manages callbacks that are connected to an item being used
+ * on a block event.
+ */
+export class ItemUseOnAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an item is used on
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemUseOnAfterEvent) => void): (arg: ItemUseOnAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an item is used on
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemUseOnAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to an item being used on a
+ * block.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class ItemUseOnBeforeEvent extends ItemUseOnAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * If set to true, this will cancel the item use behavior.
+   *
+   */
+  cancel: boolean;
+}
+
+/**
+ * Manages callbacks that fire before an item being used on a
+ * block event.
+ */
+export class ItemUseOnBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called before an item is used
+   * on a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ItemUseOnBeforeEvent) => void): (arg: ItemUseOnBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called before an item is used
+   * on a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ItemUseOnBeforeEvent) => void): void;
 }
 
 /**
@@ -2424,6 +3530,21 @@ export class Player extends Entity {
   readonly name: string;
   /**
    * @remarks
+   * Contains methods for manipulating the on-screen display of a
+   * Player.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly onScreenDisplay: ScreenDisplay;
+  /**
+   * @remarks
+   * Gets the current spawn point of the player.
+   *
+   * @throws This function can throw errors.
+   */
+  getSpawnPoint(): DimensionLocation | undefined;
+  /**
+   * @remarks
    * Plays a sound that only this particular player can hear.
    *
    * This function can't be called in read-only mode.
@@ -2509,6 +3630,20 @@ export class Player extends Entity {
    * ```
    */
   sendMessage(message: (RawMessage | string)[] | RawMessage | string): void;
+  /**
+   * @remarks
+   * Sets the current starting spawn point for this particular
+   * player.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   *
+   * {@link Error}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  setSpawnPoint(spawnPoint?: DimensionLocation): void;
 }
 
 /**
@@ -2607,10 +3742,518 @@ export class PlayerSpawnAfterEventSignal extends IPlayerSpawnAfterEventSignal {
 }
 
 /**
+ * Contains information related to changes to a pressure plate
+ * pop.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class PressurePlatePopAfterEvent extends BlockEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The redstone power of the pressure plate before it was
+   * popped.
+   *
+   */
+  readonly previousRedstonePower: number;
+  /**
+   * @remarks
+   * The redstone power of the pressure plate at the time of the
+   * pop.
+   *
+   */
+  readonly redstonePower: number;
+}
+
+/**
+ * Manages callbacks that are connected to when a pressure
+ * plate is popped.
+ */
+export class PressurePlatePopAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a pressure plate is
+   * popped.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PressurePlatePopAfterEvent) => void): (arg: PressurePlatePopAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a pressure plate
+   * is popped.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PressurePlatePopAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to changes to a pressure plate
+ * push.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class PressurePlatePushAfterEvent extends BlockEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The redstone power of the pressure plate before it was
+   * pushed.
+   *
+   */
+  readonly previousRedstonePower: number;
+  /**
+   * @remarks
+   * The redstone power of the pressure plate at the time of the
+   * push.
+   *
+   */
+  readonly redstonePower: number;
+  /**
+   * @remarks
+   * Source that triggered the pressure plate push.
+   *
+   */
+  readonly source: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when a pressure
+ * plate is pushed.
+ */
+export class PressurePlatePushAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a pressure plate is
+   * pushed.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PressurePlatePushAfterEvent) => void): (arg: PressurePlatePushAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a pressure plate
+   * is pushed.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PressurePlatePushAfterEvent) => void): void;
+}
+
+/**
+ * Contains objectives and participants for the scoreboard.
+ */
+export class Scoreboard {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a new objective to the scoreboard.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  addObjective(objectiveId: string, displayName: string): ScoreboardObjective;
+  /**
+   * @remarks
+   * Clears the objective that occupies a display slot.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  clearObjectiveAtDisplaySlot(displaySlotId: DisplaySlotId): ScoreboardObjective | undefined;
+  /**
+   * @remarks
+   * Returns a specific objective (by id).
+   *
+   * @param objectiveId
+   * Identifier of the objective.
+   */
+  getObjective(objectiveId: string): ScoreboardObjective | undefined;
+  /**
+   * @remarks
+   * Returns an objective that occupies the specified display
+   * slot.
+   *
+   */
+  getObjectiveAtDisplaySlot(displaySlotId: DisplaySlotId): ScoreboardObjectiveDisplayOptions | undefined;
+  /**
+   * @remarks
+   * Returns all defined objectives.
+   *
+   */
+  getObjectives(): ScoreboardObjective[];
+  /**
+   * @remarks
+   * Returns all defined scoreboard identities.
+   *
+   */
+  getParticipants(): ScoreboardIdentity[];
+  /**
+   * @remarks
+   * Removes an objective from the scoreboard.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  removeObjective(objectiveId: ScoreboardObjective | string): boolean;
+  /**
+   * @remarks
+   * Sets an objective into a display slot with specified
+   * additional display settings.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @returns
+   * Returns the previous `ScoreboardObjective` set at the
+   * display slot, if no objective was previously set it returns
+   * `undefined`.
+   * @throws This function can throw errors.
+   */
+  setObjectiveAtDisplaySlot(displaySlotId: DisplaySlotId, objectiveDisplaySetting: ScoreboardObjectiveDisplayOptions): ScoreboardObjective | undefined;
+}
+
+/**
+ * Contains an identity of the scoreboard item.
+ */
+export class ScoreboardIdentity {
+  private constructor();
+  /**
+   * @remarks
+   * Returns the player-visible name of this identity.
+   *
+   */
+  readonly displayName: string;
+  /**
+   * @remarks
+   * Identifier of the scoreboard identity.
+   *
+   */
+  readonly id: number;
+  /**
+   * @remarks
+   * Type of the scoreboard identity.
+   *
+   */
+  readonly "type": ScoreboardIdentityType;
+  /**
+   * @remarks
+   * If the scoreboard identity is an entity or player, returns
+   * the entity that this scoreboard item corresponds to.
+   *
+   * @throws This function can throw errors.
+   */
+  getEntity(): Entity | undefined;
+  /**
+   * @remarks
+   * Returns true if the ScoreboardIdentity reference is still
+   * valid.
+   *
+   */
+  isValid(): boolean;
+}
+
+/**
+ * Contains objectives and participants for the scoreboard.
+ */
+export class ScoreboardObjective {
+  private constructor();
+  /**
+   * @remarks
+   * Returns the player-visible name of this scoreboard
+   * objective.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly displayName: string;
+  /**
+   * @remarks
+   * Identifier of the scoreboard objective.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly id: string;
+  /**
+   * @remarks
+   * Adds a score to the given participant and objective.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param participant
+   * Participant to apply the scoreboard value addition to.
+   * @throws This function can throw errors.
+   */
+  addScore(participant: Entity | ScoreboardIdentity | string, scoreToAdd: number): number;
+  /**
+   * @remarks
+   * Returns all objective participant identities.
+   *
+   * @throws This function can throw errors.
+   */
+  getParticipants(): ScoreboardIdentity[];
+  /**
+   * @remarks
+   * Returns a specific score for a participant.
+   *
+   * @param participant
+   * Identifier of the participant to retrieve a score for.
+   * @throws This function can throw errors.
+   */
+  getScore(participant: Entity | ScoreboardIdentity | string): number | undefined;
+  /**
+   * @remarks
+   * Returns specific scores for this objective for all
+   * participants.
+   *
+   * @throws This function can throw errors.
+   */
+  getScores(): ScoreboardScoreInfo[];
+  /**
+   * @remarks
+   * Returns if the specified identity is a participant of the
+   * scoreboard objective.
+   *
+   * @throws This function can throw errors.
+   */
+  hasParticipant(participant: Entity | ScoreboardIdentity | string): boolean;
+  /**
+   * @remarks
+   * Returns true if the ScoreboardObjective reference is still
+   * valid.
+   *
+   */
+  isValid(): boolean;
+  /**
+   * @remarks
+   * Removes a participant from this scoreboard objective.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param participant
+   * Participant to remove from being tracked with this
+   * objective.
+   * @throws This function can throw errors.
+   */
+  removeParticipant(participant: Entity | ScoreboardIdentity | string): boolean;
+  /**
+   * @remarks
+   * Sets a score for a participant.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param participant
+   * Identity of the participant.
+   * @param score
+   * New value of the score.
+   * @throws This function can throw errors.
+   */
+  setScore(participant: Entity | ScoreboardIdentity | string, score: number): void;
+}
+
+/**
+ * Contains a pair of a scoreboard participant and its
+ * respective score.
+ */
+export class ScoreboardScoreInfo {
+  private constructor();
+  /**
+   * @remarks
+   * This scoreboard participant for this score.
+   *
+   */
+  readonly participant: ScoreboardIdentity;
+  /**
+   * @remarks
+   * Score value of the identity for this objective.
+   *
+   */
+  readonly score: number;
+}
+
+/**
+ * Contains information about user interface elements that are
+ * showing up on the screen.
+ */
+export class ScreenDisplay {
+  private constructor();
+  /**
+   * @remarks
+   * Returns true if the current reference to this screen display
+   * manager object is valid and functional.
+   *
+   */
+  isValid(): boolean;
+  /**
+   * @remarks
+   * Set the action bar text - a piece of text that displays
+   * beneath the title and above the hot-bar.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param text
+   * New value for the action bar text.
+   * @throws This function can throw errors.
+   */
+  setActionBar(text: (RawMessage | string)[] | RawMessage | string): void;
+  /**
+   * @remarks
+   * Will cause a title to show up on the player's on screen
+   * display. Will clear the title if set to empty string. You
+   * can optionally specify an additional subtitle as well as
+   * fade in, stay and fade out times.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   * @example countdown.ts
+   * ```typescript
+   *   let players = mc.world.getPlayers();
+   *
+   *   players[0].onScreenDisplay.setTitle("Get ready!", {
+   *     stayDuration: 220,
+   *     fadeInDuration: 2,
+   *     fadeOutDuration: 4,
+   *     subtitle: "10",
+   *   });
+   *
+   *   let countdown = 10;
+   *
+   *   let intervalId = mc.system.runInterval(() => {
+   *     countdown--;
+   *     players[0].onScreenDisplay.updateSubtitle(countdown.toString());
+   *
+   *     if (countdown == 0) {
+   *       mc.system.clearRun(intervalId);
+   *     }
+   *   }, 20);
+   * ```
+   * @example setTitle.ts
+   * ```typescript
+   *   let players = mc.world.getPlayers();
+   *
+   *   players[0].onScreenDisplay.setTitle("§o§6Fancy Title§r");
+   * ```
+   * @example setTitleAndSubtitle.ts
+   * ```typescript
+   *   let players = mc.world.getPlayers();
+   *
+   *   players[0].onScreenDisplay.setTitle("Chapter 1", {
+   *     stayDuration: 100,
+   *     fadeInDuration: 2,
+   *     fadeOutDuration: 4,
+   *     subtitle: "Trouble in Block Town",
+   *   });
+   * ```
+   */
+  setTitle(title: (RawMessage | string)[] | RawMessage | string, options?: TitleDisplayOptions): void;
+  /**
+   * @remarks
+   * Updates the subtitle if the subtitle was previously
+   * displayed via the setTitle method.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  updateSubtitle(subtitle: (RawMessage | string)[] | RawMessage | string): void;
+}
+
+/**
+ * Returns additional data about a /scriptevent command
+ * invocation.
+ */
+export class ScriptEventCommandMessageAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Identifier of this ScriptEvent command message.
+   *
+   */
+  readonly id: string;
+  /**
+   * @remarks
+   * If this command was initiated via an NPC, returns the entity
+   * that initiated the NPC dialogue.
+   *
+   */
+  readonly initiator?: Entity;
+  /**
+   * @remarks
+   * Optional additional data passed in with the script event
+   * command.
+   *
+   */
+  readonly message: string;
+  /**
+   * @remarks
+   * Source block if this command was triggered via a block
+   * (e.g., a commandblock.)
+   *
+   */
+  readonly sourceBlock?: Block;
+  /**
+   * @remarks
+   * Source entity if this command was triggered by an entity
+   * (e.g., a NPC).
+   *
+   */
+  readonly sourceEntity?: Entity;
+  /**
+   * @remarks
+   * Returns the type of source that fired this command.
+   *
+   */
+  readonly sourceType: ScriptEventSource;
+}
+
+/**
+ * Allows for registering an event handler that responds to
+ * inbound /scriptevent commands.
+ */
+export class ScriptEventCommandMessageAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Registers a new ScriptEvent handler.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(
+    callback: (arg: ScriptEventCommandMessageAfterEvent) => void,
+    options?: ScriptEventMessageFilterOptions
+  ): (arg: ScriptEventCommandMessageAfterEvent) => void;
+  /**
+   * @remarks
+   * Unsubscribes a particular handler for a ScriptEvent event.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ScriptEventCommandMessageAfterEvent) => void): void;
+}
+
+/**
  * A class that provides system-level events and functions.
  */
 export class System {
   private constructor();
+  /**
+   * @remarks
+   * Returns a collection of after-events for system-level
+   * operations.
+   *
+   */
+  readonly afterEvents: SystemAfterEvents;
   /**
    * @remarks
    * Represents the current world tick of the server.
@@ -2692,6 +4335,129 @@ export class System {
 }
 
 /**
+ * Provides a set of events that fire within the broader
+ * scripting system within Minecraft.
+ */
+export class SystemAfterEvents {
+  private constructor();
+  /**
+   * @remarks
+   * An event that fires when a /scriptevent command is set. This
+   * provides a way for commands and other systems to trigger
+   * behavior within script.
+   *
+   */
+  readonly scriptEventReceive: ScriptEventCommandMessageAfterEventSignal;
+}
+
+/**
+ * Contains information related to changes to a target block
+ * hit.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class TargetBlockHitAfterEvent extends BlockEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The position where the source hit the block.
+   *
+   */
+  readonly hitVector: Vector3;
+  /**
+   * @remarks
+   * The redstone power before the block is hit.
+   *
+   */
+  readonly previousRedstonePower: number;
+  /**
+   * @remarks
+   * The redstone power at the time the block is hit.
+   *
+   */
+  readonly redstonePower: number;
+  /**
+   * @remarks
+   * Optional source that hit the target block.
+   *
+   */
+  readonly source: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when a target block
+ * is hit.
+ */
+export class TargetBlockHitAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a target block is
+   * hit.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: TargetBlockHitAfterEvent) => void): (arg: TargetBlockHitAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a target block is
+   * hit.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: TargetBlockHitAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to changes to a trip wire trip.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class TripWireTripAfterEvent extends BlockEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Whether or not the block has redstone power.
+   *
+   */
+  readonly isPowered: boolean;
+  /**
+   * @remarks
+   * The sources that triggered the trip wire to trip.
+   *
+   */
+  readonly sources: Entity[];
+}
+
+/**
+ * Manages callbacks that are connected to when a trip wire is
+ * tripped.
+ */
+export class TripWireTripAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a trip wire is
+   * tripped.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: TripWireTripAfterEvent) => void): (arg: TripWireTripAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a trip wire is
+   * tripped.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: TripWireTripAfterEvent) => void): void;
+}
+
+/**
  * A class that wraps the state of a world - a set of
  * dimensions and the environment of Minecraft.
  */
@@ -2699,11 +4465,59 @@ export class World {
   private constructor();
   /**
    * @remarks
+   * Contains a set of events that are applicable to the entirety
+   * of the world.  Event callbacks are called in a deferred
+   * manner. Event callbacks are executed in read-write mode.
+   *
+   */
+  readonly afterEvents: WorldAfterEvents;
+  /**
+   * @remarks
+   * Contains a set of events that are applicable to the entirety
+   * of the world. Event callbacks are called immediately. Event
+   * callbacks are executed in read-only mode.
+   *
+   */
+  readonly beforeEvents: WorldBeforeEvents;
+  /**
+   * @remarks
+   * Returns the general global scoreboard that applies to the
+   * world.
+   *
+   */
+  readonly scoreboard: Scoreboard;
+  /**
+   * @remarks
+   * Returns the absolute time since the start of the world.
+   *
+   */
+  getAbsoluteTime(): number;
+  /**
+   * @remarks
    * Returns an array of all active players within the world.
    *
    * @throws This function can throw errors.
    */
   getAllPlayers(): Player[];
+  /**
+   * @remarks
+   * Returns the current day.
+   *
+   * @returns
+   * The current day, determined by the world time divided by the
+   * number of ticks per day. New worlds start at day 0.
+   */
+  getDay(): number;
+  /**
+   * @remarks
+   * Returns the default Overworld spawn location.
+   *
+   * @returns
+   * The default Overworld spawn location. By default, the Y
+   * coordinate is 32767, indicating a player's spawn height is
+   * not fixed and will be determined by surrounding blocks.
+   */
+  getDefaultSpawnLocation(): Vector3;
   /**
    * @remarks
    * Returns a dimension object.
@@ -2731,6 +4545,14 @@ export class World {
    * Throws if the provided EntityQueryOptions are invalid.
    */
   getPlayers(options?: EntityQueryOptions): Player[];
+  /**
+   * @remarks
+   * Returns the time of day.
+   *
+   * @returns
+   * The time of day, in ticks, between 0 and 24000.
+   */
+  getTimeOfDay(): number;
   /**
    * @remarks
    * Plays a particular music track for all players.
@@ -2808,6 +4630,8 @@ export class World {
    *
    * This function can't be called in read-only mode.
    *
+   * @param musicOptions
+   * Additional options for the music track.
    * @throws
    * An error will be thrown if volume is less than 0.0.
    * An error will be thrown if fade is less than 0.0.
@@ -2854,6 +4678,46 @@ export class World {
   sendMessage(message: (RawMessage | string)[] | RawMessage | string): void;
   /**
    * @remarks
+   * Sets the world time.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param absoluteTime
+   * The world time, in ticks.
+   */
+  setAbsoluteTime(absoluteTime: number): void;
+  /**
+   * @remarks
+   * Sets a default spawn location for all players.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param spawnLocation
+   * Location of the spawn point. Note that this is assumed to be
+   * within the overworld dimension.
+   * @throws
+   * Throws if the provided spawn location is out of bounds.
+   *
+   * {@link Error}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  setDefaultSpawnLocation(spawnLocation: Vector3): void;
+  /**
+   * @remarks
+   * Sets the time of day.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param timeOfDay
+   * The time of day, in ticks, between 0 and 24000.
+   * @throws
+   * Throws if the provided time of day is not within the valid
+   * range.
+   */
+  setTimeOfDay(timeOfDay: number | TimeOfDay): void;
+  /**
+   * @remarks
    * Stops any music tracks from playing.
    *
    * This function can't be called in read-only mode.
@@ -2874,6 +4738,100 @@ export class WorldAfterEvents {
    *
    */
   readonly buttonPush: ButtonPushAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an entity dies.
+   *
+   */
+  readonly entityDie: EntityDieAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when entity health changes in any degree.
+   *
+   */
+  readonly entityHealthChanged: EntityHealthChangedAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an entity hits (that is, melee
+   * attacks) a block.
+   *
+   */
+  readonly entityHitBlock: EntityHitBlockAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an entity hits (that is, melee
+   * attacks) another entity.
+   *
+   */
+  readonly entityHitEntity: EntityHitEntityAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an entity is hurt (takes damage).
+   *
+   */
+  readonly entityHurt: EntityHurtAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a chargeable item completes charging.
+   *
+   */
+  readonly itemCompleteUse: ItemCompleteUseAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a chargeable item is released from
+   * charging.
+   *
+   */
+  readonly itemReleaseUse: ItemReleaseUseAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a chargeable item starts charging.
+   *
+   */
+  readonly itemStartUse: ItemStartUseAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a player successfully uses an item or
+   * places a block by pressing the Use Item / Place Block
+   * button. If multiple blocks are placed, this event will only
+   * occur once at the beginning of the block placement. Note:
+   * This event cannot be used with Hoe or Axe items.
+   *
+   */
+  readonly itemStartUseOn: ItemStartUseOnAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a chargeable item stops charging.
+   *
+   */
+  readonly itemStopUse: ItemStopUseAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a player releases the Use Item / Place
+   * Block button after successfully using an item. Note: This
+   * event cannot be used with Hoe or Axe items.
+   *
+   */
+  readonly itemStopUseOn: ItemStopUseOnAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an item is successfully used by a
+   * player.
+   *
+   */
+  readonly itemUse: ItemUseAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when an item is used on a block by a
+   * player.
+   *
+   */
+  readonly itemUseOn: ItemUseOnAfterEventSignal;
+  /**
+   * @remarks
+   * A lever has been pulled.
+   *
+   */
   readonly leverAction: LeverActionAfterEventSignal;
   /**
    * @remarks
@@ -2897,6 +4855,140 @@ export class WorldAfterEvents {
    *
    */
   readonly playerSpawn: PlayerSpawnAfterEventSignal;
+  /**
+   * @remarks
+   * A pressure plate has popped back up (i.e., there are no
+   * entities on the pressure plate.)
+   *
+   */
+  readonly pressurePlatePop: PressurePlatePopAfterEventSignal;
+  /**
+   * @remarks
+   * A pressure plate has pushed (at least one entity has moved
+   * onto a pressure plate.)
+   *
+   */
+  readonly pressurePlatePush: PressurePlatePushAfterEventSignal;
+  /**
+   * @remarks
+   * A target block was hit.
+   *
+   */
+  readonly targetBlockHit: TargetBlockHitAfterEventSignal;
+  /**
+   * @remarks
+   * A trip wire was tripped.
+   *
+   */
+  readonly tripWireTrip: TripWireTripAfterEventSignal;
+}
+
+/**
+ * A set of events that fire before an actual action occurs. In
+ * most cases, you can potentially cancel or modify the
+ * impending event. Note that in before events any APIs that
+ * modify gameplay state will not function and will throw an
+ * error. (e.g., dimension.spawnEntity)
+ */
+export class WorldBeforeEvents {
+  private constructor();
+  /**
+   * @remarks
+   * This event fires when an item is successfully used by a
+   * player.
+   *
+   */
+  readonly itemUse: ItemUseBeforeEventSignal;
+  /**
+   * @remarks
+   * This event fires when an item is used on a block by a
+   * player.
+   *
+   */
+  readonly itemUseOn: ItemUseOnBeforeEventSignal;
+}
+
+/**
+ * Contains information for block raycast hit results.
+ */
+export interface BlockRaycastHit {
+  /**
+   * @remarks
+   * Block that was hit.
+   *
+   */
+  block: Block;
+  /**
+   * @remarks
+   * Face of the block that was hit.
+   *
+   */
+  face: Direction;
+  /**
+   * @remarks
+   * Hit location relative to the bottom north-west corner of the
+   * block.
+   *
+   */
+  faceLocation: Vector3;
+}
+
+/**
+ * Contains additional options for configuring a block raycast
+ * query.
+ */
+export interface BlockRaycastOptions {
+  /**
+   * @remarks
+   * If true, liquid blocks will be considered as blocks that
+   * 'stop' the raycast.
+   *
+   */
+  includeLiquidBlocks?: boolean;
+  /**
+   * @remarks
+   * If true, passable blocks like vines and flowers will be
+   * considered as blocks that 'stop' the raycast.
+   *
+   */
+  includePassableBlocks?: boolean;
+  /**
+   * @remarks
+   * Maximum distance, in blocks, to process the raycast.
+   *
+   */
+  maxDistance?: number;
+}
+
+/**
+ * An exact coordinate within the world, including its
+ * dimension and location.
+ */
+export interface DimensionLocation {
+  /**
+   * @remarks
+   * Dimension that this coordinate is associated with.
+   *
+   */
+  dimension: Dimension;
+  /**
+   * @remarks
+   * X component of this dimension-location.
+   *
+   */
+  x: number;
+  /**
+   * @remarks
+   * Y component of this dimension-location.
+   *
+   */
+  y: number;
+  /**
+   * @remarks
+   * Z component of this dimension-location.
+   *
+   */
+  z: number;
 }
 
 /**
@@ -2937,6 +5029,31 @@ export interface EntityApplyDamageOptions {
 }
 
 /**
+ * Provides information about how damage has been applied to an
+ * entity.
+ */
+export interface EntityDamageSource {
+  /**
+   * @remarks
+   * Cause enumeration of damage.
+   *
+   */
+  cause: EntityDamageCause;
+  /**
+   * @remarks
+   * Optional entity that caused the damage.
+   *
+   */
+  damagingEntity?: Entity;
+  /**
+   * @remarks
+   * Optional projectile that may have caused damage.
+   *
+   */
+  damagingProjectile?: Entity;
+}
+
+/**
  * Contains additional options for entity effects.
  */
 export interface EntityEffectOptions {
@@ -2952,6 +5069,27 @@ export interface EntityEffectOptions {
    *
    */
   showParticles?: boolean;
+}
+
+/**
+ * Contains optional parameters for registering an entity
+ * event.
+ */
+export interface EntityEventOptions {
+  /**
+   * @remarks
+   * If this value is set, this event will only fire for entities
+   * that match the entities within this collection.
+   *
+   */
+  entities?: Entity[];
+  /**
+   * @remarks
+   * If this value is set, this event will only fire if the
+   * impacted entities' type matches this parameter.
+   *
+   */
+  entityTypes?: string[];
 }
 
 /**
@@ -3151,6 +5289,36 @@ export interface EntityQueryScoreOptions {
 }
 
 /**
+ * Contains information for entity raycast hit results.
+ */
+export interface EntityRaycastHit {
+  /**
+   * @remarks
+   * Distance from ray origin to entity bounds.
+   *
+   */
+  distance: number;
+  /**
+   * @remarks
+   * Entity that was hit.
+   *
+   */
+  entity: Entity;
+}
+
+/**
+ * Contains additional options for an entity raycast operation.
+ */
+export interface EntityRaycastOptions {
+  /**
+   * @remarks
+   * Maximum distance, in blocks, to process the raycast.
+   *
+   */
+  maxDistance?: number;
+}
+
+/**
  * Additional configuration options for {@link
  * World.playMusic}/{@link World.queueMusic} methods.
  */
@@ -3201,9 +5369,14 @@ export interface PlayerSoundOptions {
 }
 
 /**
- * Defines a JSON structure that is used for more flexible
+ * Defines a JSON structure that is used for more flexible.
  */
 export interface RawMessage {
+  /**
+   * @remarks
+   * Provides a raw-text equivalent of the current message.
+   *
+   */
   rawtext?: RawMessage[];
   /**
    * @remarks
@@ -3226,6 +5399,13 @@ export interface RawMessage {
    *
    */
   translate?: string;
+  /**
+   * @remarks
+   * Arguments for the translation token. Can be either an array
+   * of strings or RawMessage containing an array of raw text
+   * objects.
+   *
+   */
   with?: string[] | RawMessage;
 }
 
@@ -3246,6 +5426,39 @@ export interface RawMessageScore {
    *
    */
   objective?: string;
+}
+
+/**
+ * Contains additional options for how a scoreboard should be
+ * displayed within its display slot.
+ */
+export interface ScoreboardObjectiveDisplayOptions {
+  /**
+   * @remarks
+   * Objective to be displayed.
+   *
+   */
+  objective: ScoreboardObjective;
+  /**
+   * @remarks
+   * The sort order to display the objective items within.
+   *
+   */
+  sortOrder?: ObjectiveSortOrder;
+}
+
+/**
+ * Contains additional options for registering a script event
+ * event callback.
+ */
+export interface ScriptEventMessageFilterOptions {
+  /**
+   * @remarks
+   * Optional list of namespaces to filter inbound script event
+   * messages.
+   *
+   */
+  namespaces: string[];
 }
 
 /**
@@ -3285,6 +5498,44 @@ export interface TeleportOptions {
    *
    */
   rotation?: Vector2;
+}
+
+/**
+ * Contains additional options for displaying a title and
+ * optional subtitle.
+ */
+export interface TitleDisplayOptions {
+  /**
+   * @remarks
+   * Fade-in duration for the title and subtitle, in ticks. There
+   * are 20 ticks per second. Use {@link TicksPerSecond} constant
+   * to convert between ticks and seconds.
+   *
+   */
+  fadeInDuration: number;
+  /**
+   * @remarks
+   * Fade-out time for the title and subtitle, in ticks. There
+   * are 20 ticks per second. Use {@link TicksPerSecond} constant
+   * to convert between ticks and seconds.
+   *
+   */
+  fadeOutDuration: number;
+  /**
+   * @remarks
+   * Amount of time for the title and subtitle to stay in place,
+   * in ticks. There are 20 ticks per second. Use {@link
+   * TicksPerSecond} constant to convert between ticks and
+   * seconds.
+   *
+   */
+  stayDuration: number;
+  /**
+   * @remarks
+   * Optional subtitle text.
+   *
+   */
+  subtitle?: (RawMessage | string)[] | RawMessage | string;
 }
 
 /**
@@ -3346,6 +5597,21 @@ export interface WorldSoundOptions {
    *
    */
   volume?: number;
+}
+
+// @ts-ignore Class inheritance allowed for native defined classes
+export class CommandError extends Error {
+  private constructor();
+}
+
+// @ts-ignore Class inheritance allowed for native defined classes
+export class LocationInUnloadedChunkError extends Error {
+  private constructor();
+}
+
+// @ts-ignore Class inheritance allowed for native defined classes
+export class LocationOutOfWorldBoundariesError extends Error {
+  private constructor();
 }
 
 /**
