@@ -15,12 +15,18 @@
  * ```json
  * {
  *   "module_name": "@minecraft/server",
- *   "version": "1.9.0"
+ *   "version": "1.10.0"
  * }
  * ```
  *
  */
 import * as minecraftcommon from "@minecraft/common";
+export enum BlockComponentTypes {
+  Inventory = "minecraft:inventory",
+  Piston = "minecraft:piston",
+  Sign = "minecraft:sign",
+}
+
 /**
  * An enumeration describing the state of a block piston.
  */
@@ -252,6 +258,52 @@ export enum EasingType {
   OutQuint = "OutQuint",
   OutSine = "OutSine",
   Spring = "Spring",
+}
+
+export enum EntityComponentTypes {
+  CanClimb = "minecraft:can_climb",
+  CanFly = "minecraft:can_fly",
+  CanPowerJump = "minecraft:can_power_jump",
+  Color = "minecraft:color",
+  Equippable = "minecraft:equippable",
+  FireImmune = "minecraft:fire_immune",
+  FloatsInLiquid = "minecraft:floats_in_liquid",
+  FlyingSpeed = "minecraft:flying_speed",
+  FrictionModifier = "minecraft:friction_modifier",
+  GroundOffset = "minecraft:ground_offset",
+  Healable = "minecraft:healable",
+  Health = "minecraft:health",
+  Inventory = "minecraft:inventory",
+  IsBaby = "minecraft:is_baby",
+  IsCharged = "minecraft:is_charged",
+  IsChested = "minecraft:is_chested",
+  IsDyeable = "minecraft:is_dyeable",
+  IsHiddenWhenInvisible = "minecraft:is_hidden_when_invisible",
+  IsIgnited = "minecraft:is_ignited",
+  IsIllagerCaptain = "minecraft:is_illager_captain",
+  IsSaddled = "minecraft:is_saddled",
+  IsShaking = "minecraft:is_shaking",
+  IsSheared = "minecraft:is_sheared",
+  IsStackable = "minecraft:is_stackable",
+  IsStunned = "minecraft:is_stunned",
+  IsTamed = "minecraft:is_tamed",
+  Item = "minecraft:item",
+  MarkVariant = "minecraft:mark_variant",
+  MovementAmphibious = "minecraft:movement.amphibious",
+  MovementBasic = "minecraft:movement.basic",
+  MovementFly = "minecraft:movement.fly",
+  MovementGeneric = "minecraft:movement.generic",
+  MovementHover = "minecraft:movement.hover",
+  MovementJump = "minecraft:movement.jump",
+  MovementSkip = "minecraft:movement.skip",
+  OnFire = "minecraft:onfire",
+  Projectile = "minecraft:projectile",
+  PushThrough = "minecraft:push_through",
+  Scale = "minecraft:scale",
+  SkinId = "minecraft:skin_id",
+  TypeFamily = "minecraft:type_family",
+  Variant = "minecraft:variant",
+  WantsJockey = "minecraft:wants_jockey",
 }
 
 /**
@@ -633,6 +685,31 @@ export enum GameMode {
 }
 
 /**
+ * The types of item components that are accessible via
+ * function ItemStack.getComponent.
+ */
+export enum ItemComponentTypes {
+  /**
+   * @remarks
+   * The minecraft:cooldown component.
+   *
+   */
+  Cooldown = "minecraft:cooldown",
+  /**
+   * @remarks
+   * The minecraft:durability component.
+   *
+   */
+  Durability = "minecraft:durability",
+  /**
+   * @remarks
+   * The minecraft:food component.
+   *
+   */
+  Food = "minecraft:food",
+}
+
+/**
  * Describes how an an item can be moved within a container.
  */
 export enum ItemLockMode {
@@ -816,6 +893,31 @@ export enum SignSide {
    *
    */
   Front = "Front",
+}
+
+export enum StructureAnimationMode {
+  Blocks = "Blocks",
+  Layers = "Layers",
+  None = "None",
+}
+
+export enum StructureMirrorAxis {
+  None = "None",
+  X = "X",
+  XZ = "XZ",
+  Z = "Z",
+}
+
+export enum StructureRotation {
+  None = "None",
+  Rotate180 = "Rotate180",
+  Rotate270 = "Rotate270",
+  Rotate90 = "Rotate90",
+}
+
+export enum StructureSaveMode {
+  Memory = "Memory",
+  World = "World",
 }
 
 /**
@@ -1046,6 +1148,27 @@ export class Block {
    * {@link LocationOutOfWorldBoundariesError}
    */
   getComponent(componentId: string): BlockComponent | undefined;
+  /**
+   * @remarks
+   * Creates a prototype item stack based on this block that can
+   * be used with Container/ContainerSlot APIs.
+   *
+   * @param amount
+   * Number of instances of this block to place in the item
+   * stack.
+   * @param withData
+   * Whether additional data facets of the item stack are
+   * included.
+   * @returns
+   * An itemStack with the specified amount of items and data.
+   * Returns undefined if block type is incompatible.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  getItemStack(amount?: number, withData?: boolean): ItemStack | undefined;
   /**
    * @remarks
    * Returns a set of tags for a block.
@@ -1289,6 +1412,17 @@ export class BlockPermutation {
    * permutation has.
    */
   getAllStates(): Record<string, boolean | number | string>;
+  /**
+   * @remarks
+   * Retrieves a prototype item stack based on this block
+   * permutation that can be used with item
+   * Container/ContainerSlot APIs.
+   *
+   * @param amount
+   * Number of instances of this block to place in the prototype
+   * item stack.
+   */
+  getItemStack(amount?: number): ItemStack | undefined;
   /**
    * @remarks
    * Gets a state for the permutation.
@@ -5070,6 +5204,177 @@ export class EntityOnFireComponent extends EntityComponent {
 }
 
 /**
+ * The projectile component controls the properties of a
+ * projectile entity and allows it to be shot in a given
+ * direction.
+ * This component is present when the entity has the
+ * minecraft:projectile component.
+ * @example shootArrow.ts
+ * ```typescript
+ * import { world, Vector3 } from '@minecraft/server';
+ *
+ * const location: Vector3 = { x: 0, y: -59, z: 0 }; // Replace with the coordinates of where you want to spawn the arrow
+ * const velocity: Vector3 = { x: 0, y: 0, z: 5 };
+ * const arrow = world.getDimension('overworld').spawnEntity('minecraft:arrow', location);
+ * const projectileComp = arrow.getComponent('minecraft:projectile');
+ * projectileComp?.shoot(velocity);
+ * ```
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class EntityProjectileComponent extends EntityComponent {
+  private constructor();
+  /**
+   * @remarks
+   * The fraction of the projectile's speed maintained every tick
+   * while traveling through air.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  airInertia: number;
+  /**
+   * @remarks
+   * If true, the entity will be set on fire when hurt. The
+   * default burn duration is 5 seconds. This duration can be
+   * modified via the onFireTime property. The entity will not
+   * catch fire if immune or if the entity is wet.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  catchFireOnHurt: boolean;
+  /**
+   * @remarks
+   * If true, the projectile will spawn crit particles when hit
+   * by a player. E.g. Player attacking a Shulker bullet.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  critParticlesOnProjectileHurt: boolean;
+  /**
+   * @remarks
+   * If true, the projectile will be destroyed when it takes
+   * damage. E.g. Player attacking a Shulker bullet.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  destroyOnProjectileHurt: boolean;
+  /**
+   * @remarks
+   * The gravity applied to the projectile. When the entity is
+   * not on the ground, subtracts this amount from the
+   * projectile’s change in vertical position every tick. The
+   * higher the value, the faster the projectile falls. If
+   * negative, the entity will rise instead of fall.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  gravity: number;
+  /**
+   * @remarks
+   * The sound that plays when the projectile hits an entity.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  hitEntitySound?: string;
+  /**
+   * @remarks
+   * The sound that plays when the projectile hits a block.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  hitGroundSound?: string;
+  /**
+   * @remarks
+   * The particle that spawns when the projectile hits something.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  hitParticle?: string;
+  /**
+   * @remarks
+   * If true and the weather is thunder and the entity has line
+   * of sight to the sky, the entity will be struck by lightning
+   * when hit. E.g. A thrown Trident with the Channeling
+   * enchantment.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  lightningStrikeOnHit: boolean;
+  /**
+   * @remarks
+   * The fraction of the projectile's speed maintained every tick
+   * while traveling through a liquid.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  liquidInertia: number;
+  /**
+   * @remarks
+   * Duration in seconds that the entity hit will be on fire for
+   * when catchFireOnHurt is set to true.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  onFireTime: number;
+  /**
+   * @remarks
+   * The owner of the projectile. This is used to determine what
+   * the projectile can collide with and damage. It also
+   * determines which entity is assigned as the attacker.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  owner?: Entity;
+  /**
+   * @remarks
+   * If true, the projectile will bounce off mobs when no damage
+   * is taken. E.g. A spawning wither.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  shouldBounceOnHit: boolean;
+  /**
+   * @remarks
+   * If true, the projectile will stop moving when an entity is
+   * hit as thought it had been blocked. E.g. Thrown trident on
+   * hit behavior.
+   *
+   * This property can't be edited in read-only mode.
+   *
+   */
+  stopOnHit: boolean;
+  static readonly componentId = "minecraft:projectile";
+  /**
+   * @remarks
+   * Shoots the projectile with a given velocity. The projectile
+   * will be shot from its current location.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param velocity
+   * The velocity to fire the projectile. This controls both the
+   * speed and direction which which the projectile will be shot.
+   * @param options
+   * Optional configuration for the shoot.
+   * @throws
+   * Throws if the component or entity no longer exist.
+   */
+  shoot(velocity: Vector3, options?: ProjectileShootOptions): void;
+}
+
+/**
  * Sets the distance through which the entity can push through.
  */
 // @ts-ignore Class inheritance allowed for native defined classes
@@ -5302,6 +5607,54 @@ export class EntitySpawnAfterEventSignal {
    * @throws This function can throw errors.
    */
   unsubscribe(callback: (arg: EntitySpawnAfterEvent) => void): void;
+}
+
+/**
+ * Represents information about a type of entity.
+ */
+export class EntityType {
+  private constructor();
+  /**
+   * @remarks
+   * Identifier of this entity type - for example,
+   * 'minecraft:skeleton'.
+   *
+   */
+  readonly id: string;
+}
+
+// @ts-ignore Class inheritance allowed for native defined classes
+export class EntityTypeFamilyComponent extends EntityComponent {
+  private constructor();
+  static readonly componentId = "minecraft:type_family";
+  /**
+   * @throws This function can throw errors.
+   */
+  getTypeFamilies(): string[];
+  /**
+   * @throws This function can throw errors.
+   */
+  hasTypeFamily(typeFamily: string): boolean;
+}
+
+/**
+ * Used for accessing all entity types currently available for
+ * use within the world.
+ */
+export class EntityTypes {
+  private constructor();
+  /**
+   * @remarks
+   * Retrieves an entity type using a string-based identifier.
+   *
+   */
+  static get(identifier: string): EntityType | undefined;
+  /**
+   * @remarks
+   * Retrieves a set of all entity types within this world.
+   *
+   */
+  static getAll(): EntityType[];
 }
 
 /**
@@ -5689,6 +6042,63 @@ export class ItemCompleteUseAfterEventSignal {
 // @ts-ignore Class inheritance allowed for native defined classes
 export class ItemComponent extends Component {
   private constructor();
+}
+
+/**
+ * When present on an item, this item has a cooldown effect
+ * when used by entities.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class ItemCooldownComponent extends ItemComponent {
+  private constructor();
+  /**
+   * @remarks
+   * Represents the cooldown category that this item is
+   * associated with.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly cooldownCategory: string;
+  /**
+   * @remarks
+   * Amount of time, in ticks, it will take this item to
+   * cooldown.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly cooldownTicks: number;
+  static readonly componentId = "minecraft:cooldown";
+  /**
+   * @remarks
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  getCooldownTicksRemaining(player: Player): number;
+  /**
+   * @remarks
+   * Will return true if the item is the cooldown category passed
+   * in and false otherwise.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param cooldownCategory
+   * The cooldown category that might be associated with this
+   * item.
+   * @returns
+   * True if the item is the given cooldown category.
+   * @throws This function can throw errors.
+   */
+  isCooldownCategory(cooldownCategory: string): boolean;
+  /**
+   * @remarks
+   * Starts a new cooldown period for this item.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  startCooldown(player: Player): void;
 }
 
 /**
@@ -7064,6 +7474,20 @@ export class Player extends Entity {
   getTotalXp(): number;
   /**
    * @remarks
+   * Plays a music track that only this particular player can
+   * hear.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param trackId
+   * Identifier of the music track to play.
+   * @param musicOptions
+   * Additional options for the music track.
+   * @throws This function can throw errors.
+   */
+  playMusic(trackId: string, musicOptions?: MusicOptions): void;
+  /**
+   * @remarks
    * Plays a sound that only this particular player can hear.
    *
    * This function can't be called in read-only mode.
@@ -7073,6 +7497,24 @@ export class Player extends Entity {
    * @throws This function can throw errors.
    */
   playSound(soundId: string, soundOptions?: PlayerSoundOptions): void;
+  /**
+   * @remarks
+   * Queues an additional music track that only this particular
+   * player can hear. If a track is not playing, a music track
+   * will play.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param trackId
+   * Identifier of the music track to play.
+   * @param musicOptions
+   * Additional options for the music track.
+   * @throws
+   * An error will be thrown if volume is less than 0.0.
+   * An error will be thrown if fade is less than 0.0.
+   *
+   */
+  queueMusic(trackId: string, musicOptions?: MusicOptions): void;
   /**
    * @remarks
    * Resets the level of the player.
@@ -7135,6 +7577,16 @@ export class Player extends Entity {
    * {@link LocationOutOfWorldBoundariesError}
    */
   setSpawnPoint(spawnPoint?: DimensionLocation): void;
+  /**
+   * @remarks
+   * Stops any music tracks from playing for this particular
+   * player.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  stopMusic(): void;
 }
 
 /**
@@ -8454,6 +8906,180 @@ export class ScriptEventCommandMessageAfterEventSignal {
 }
 
 /**
+ * Represents a loaded structure template (.mcstructure file).
+ * Structures can be placed in a world using the /structure
+ * command or the {@link StructureManager} APIs.
+ */
+export class Structure {
+  private constructor();
+  /**
+   * @remarks
+   * The name of the structure. The identifier must include a
+   * namespace. For structures created via the /structure command
+   * or structure blocks, this namespace defaults to
+   * "mystructure".
+   *
+   */
+  readonly id: string;
+  /**
+   * @remarks
+   * The dimensions of the structure. For example, a single block
+   * structure will have a size of {x:1, y:1, z:1}
+   *
+   * @throws This property can throw when used.
+   *
+   * {@link InvalidStructureError}
+   */
+  readonly size: Vector3;
+  /**
+   * @remarks
+   * Returns a BlockPermutation representing the block contained
+   * within the Structure at the given location.
+   *
+   * @param location
+   * The block location relative to the Structure's origin.
+   * @returns
+   * Returns a BlockPermutation. Returns undefined if a block
+   * does not exist at the given location.
+   * @throws
+   * Throws if the location is outside the structure's bounds.
+   * Throws if the Structure has been deleted.
+   *
+   * {@link minecraftcommon.InvalidArgumentError}
+   *
+   * {@link InvalidStructureError}
+   */
+  getBlockPermutation(location: Vector3): BlockPermutation | undefined;
+  /**
+   * @remarks
+   * Returns whether the block at the given location is
+   * waterlogged.
+   *
+   * @param location
+   * The block location relative to the Structure's origin.
+   * @returns
+   * Returns whether the block at the given location is
+   * waterlogged. Returns false if a block does not exist at the
+   * given location.
+   * @throws
+   * Throws if the location is outside the structure's bounds.
+   * Throws if the Structure has been deleted.
+   *
+   * {@link minecraftcommon.InvalidArgumentError}
+   *
+   * {@link InvalidStructureError}
+   */
+  getIsWaterlogged(location: Vector3): boolean;
+  /**
+   * @remarks
+   * Returns whether the Structure is valid. The Structure may
+   * become invalid if it is deleted.
+   *
+   * @returns
+   * Returns whether the Structure is valid.
+   */
+  isValid(): boolean;
+}
+
+/**
+ * Manager for Structure related APIs. Includes APIs for
+ * creating, getting, placing and deleting Structures.
+ */
+export class StructureManager {
+  private constructor();
+  /**
+   * @remarks
+   * Creates an empty Structure in memory. Use {@link
+   * Structure.setBlockPermutation} to populate the structure
+   * with blocks and save changes with {@link
+   * @minecraft/server.Structure.save}.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param identifier
+   * The name of the structure. A valid identifier must include a
+   * namespace and must be unique.
+   * @param size
+   * The size of the structure. For example, to create a single
+   * block structure the size should be {x:1, y:1, z:1}.
+   * @param saveMode
+   * How the Structure should be saved upon creation. Defaults to
+   * StructureSaveMode.Memory.
+   * @returns
+   * Returns the newly created Structure.
+   * @throws
+   * Throws if the identifier is invalid. A valid identifier must
+   * include a namespace and must be unique.
+   *
+   * {@link minecraftcommon.EngineError}
+   *
+   * {@link minecraftcommon.InvalidArgumentError}
+   */
+  createEmpty(identifier: string, size: Vector3, saveMode?: StructureSaveMode): Structure;
+  /**
+   * @remarks
+   * Deletes a structure from memory and from the world if it
+   * exists.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param structure
+   * The structure identifier or Structure object that should be
+   * deleted. Note, a Structure object will become invalid after
+   * it is deleted.
+   * @returns
+   * Returns whether the structure was removed.
+   * @throws
+   * Throws if a structure cannot be removed. For example, a
+   * structure loaded from a Behavior Pack.
+   *
+   * {@link minecraftcommon.InvalidArgumentError}
+   */
+  delete(structure: string | Structure): boolean;
+  /**
+   * @remarks
+   * Gets a Structure that is saved to memory or the world.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param identifier
+   * The name of the structure to get.
+   * @returns
+   * Returns a Structure if it exists, otherwise undefined.
+   */
+  get(identifier: string): Structure | undefined;
+  /**
+   * @remarks
+   * Places a structure in the world. Structures placed in
+   * unloaded chunks will be queued for loading.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param structure
+   * The structure's identifier or a Structure object.
+   * @param dimension
+   * The dimension where the Structure should be placed.
+   * @param location
+   * The location within the dimension where the Structure should
+   * be placed.
+   * @param options
+   * Additional options for Structure placement.
+   * @throws
+   * Throws if the integrity value is outside of the range [0,1]
+   * Throws if the integrity seed is invalid.
+   * Throws if the placement location contains blocks that are
+   * outside the world bounds.
+   *
+   * {@link minecraftcommon.ArgumentOutOfBoundsError}
+   *
+   * {@link minecraftcommon.InvalidArgumentError}
+   *
+   * {@link InvalidStructureError}
+   */
+  place(structure: string | Structure, dimension: Dimension, location: Vector3, options?: StructurePlaceOptions): void;
+}
+
+/**
  * A class that provides system-level events and functions.
  */
 export class System {
@@ -8815,6 +9441,12 @@ export class World {
    *
    */
   readonly scoreboard: Scoreboard;
+  /**
+   * @remarks
+   * Returns the manager for {@link Structure} related APIs.
+   *
+   */
+  readonly structureManager: StructureManager;
   /**
    * @remarks
    * Clears the set of dynamic properties declared for this
@@ -9520,6 +10152,13 @@ export class WorldAfterEvents {
    *
    */
   readonly weatherChange: WeatherChangeAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when the script environment is initialized
+   * on a World.
+   *
+   */
+  readonly worldInitialize: WorldInitializeAfterEventSignal;
 }
 
 /**
@@ -9577,6 +10216,42 @@ export class WorldBeforeEvents {
    *
    */
   readonly playerLeave: PlayerLeaveBeforeEventSignal;
+}
+
+/**
+ * Contains information and methods that can be used at the
+ * initialization of the scripting environment for a World.
+ */
+export class WorldInitializeAfterEvent {
+  private constructor();
+}
+
+/**
+ * Manages callbacks that are run on the first tick of the
+ * World. Do note that this event may run multiple times within
+ * a session in the case that the /reload command is used.
+ */
+export class WorldInitializeAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when the scripting
+   * environment is initialized for a World.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: WorldInitializeAfterEvent) => void): (arg: WorldInitializeAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called the scripting
+   * environment is initialized for a World.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: WorldInitializeAfterEvent) => void): void;
 }
 
 /**
@@ -10481,6 +11156,10 @@ export interface PlayerSoundOptions {
   volume?: number;
 }
 
+export interface ProjectileShootOptions {
+  uncertainty?: number;
+}
+
 /**
  * Defines a JSON structure that is used for more flexible.
  * @example addTranslatedSign.ts
@@ -10693,6 +11372,105 @@ export interface ScriptEventMessageFilterOptions {
 }
 
 /**
+ * Provides additional options for {@link
+ * StructureManager.createFromWorld}
+ */
+export interface StructureCreateOptions {
+  /**
+   * @remarks
+   * Whether blocks should be included in the structure. Defaults
+   * to true.
+   *
+   */
+  includeBlocks?: boolean;
+  /**
+   * @remarks
+   * Whether entities should be included in the structure.
+   * Defaults to true.
+   *
+   */
+  includeEntities?: boolean;
+  /**
+   * @remarks
+   * How the Structure should be saved. Defaults to
+   * StructureSaveMode.World.
+   *
+   */
+  saveMode?: StructureSaveMode;
+}
+
+/**
+ * Provides additional options for {@link
+ * StructureManager.place}
+ */
+export interface StructurePlaceOptions {
+  /**
+   * @remarks
+   * How the Structure should be animated when placed.
+   *
+   */
+  animationMode?: StructureAnimationMode;
+  /**
+   * @remarks
+   * How many seconds the animation should take.
+   *
+   */
+  animationSeconds?: number;
+  /**
+   * @remarks
+   * Whether blocks should be included in the structure. Defaults
+   * to true.
+   *
+   */
+  includeBlocks?: boolean;
+  /**
+   * @remarks
+   * Whether entities should be included in the structure.
+   * Defaults to true.
+   *
+   */
+  includeEntities?: boolean;
+  /**
+   * @remarks
+   * What percentage of blocks should be placed. A value of 1
+   * will place 100% of the blocks while a value of 0 will place
+   * none. The blocks are chosen randomly based on the {@link
+   * StructurePlaceOptions.integritySeed}.
+   *
+   */
+  integrity?: number;
+  /**
+   * @remarks
+   * Seed that determines which blocks are randomly chosen to be
+   * placed. Defaults to a random seed.
+   *
+   */
+  integritySeed?: string;
+  /**
+   * @remarks
+   * Which axes the Structure should be mirrored on when placed.
+   * Defaults to StructureMirrorAxis.None.
+   *
+   */
+  mirror?: StructureMirrorAxis;
+  /**
+   * @remarks
+   * How the Structure should be rotated when placed. Defaults to
+   * AxisAlignedRotation.None.
+   *
+   */
+  rotation?: StructureRotation;
+  /**
+   * @remarks
+   * Whether the structure should be waterlogged when placed.
+   * Defaults to false. If true, blocks will become waterlogged
+   * when placed in water.
+   *
+   */
+  waterlogged?: boolean;
+}
+
+/**
  * Contains additional options for teleporting an entity.
  * @example teleportMovement.ts
  * ```typescript
@@ -10864,11 +11642,28 @@ export class InvalidContainerSlotError extends Error {
   private constructor();
 }
 
+/**
+ * Thrown when a Structure is invalid. A structure becomes
+ * invalid when it is deleted.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class InvalidStructureError extends Error {
+  private constructor();
+}
+
+/**
+ * Thrown when the chunk for provided location or bounding area
+ * is not loaded.
+ */
 // @ts-ignore Class inheritance allowed for native defined classes
 export class LocationInUnloadedChunkError extends Error {
   private constructor();
 }
 
+/**
+ * Thrown when a provided location or bounding area is outside
+ * the minimum or maximum dimension height.
+ */
 // @ts-ignore Class inheritance allowed for native defined classes
 export class LocationOutOfWorldBoundariesError extends Error {
   private constructor();
