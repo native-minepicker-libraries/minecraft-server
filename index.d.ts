@@ -15,7 +15,7 @@
  * ```json
  * {
  *   "module_name": "@minecraft/server",
- *   "version": "1.6.0"
+ *   "version": "1.7.0"
  * }
  * ```
  *
@@ -347,11 +347,16 @@ export enum EntityInitializationCause {
   Born = "Born",
   /**
    * @remarks
-   * Case when an entity is created by an event, e.g., Wandering
-   * trader spawning llamas.
+   * Case when an entity is created by an event, e.g., a
+   * Wandering trader spawning llamas.
    *
    */
   Event = "Event",
+  /**
+   * @remarks
+   * Case when an entity is loaded into the world.
+   *
+   */
   Loaded = "Loaded",
   /**
    * @remarks
@@ -636,11 +641,47 @@ export enum ScriptEventSource {
  * day.
  */
 export enum TimeOfDay {
+  /**
+   * @remarks
+   * Sets the time to the start of the day, which is time of the
+   * day 1,000 (or the equivalent of 7am) in Minecraft.
+   *
+   */
   Day = 1000,
+  /**
+   * @remarks
+   * Sets the time to noon, which is time of the day 6,000 in
+   * Minecraft.
+   *
+   */
   Noon = 6000,
+  /**
+   * @remarks
+   * Sets the time to sunset, which is time of the day 12,000 (or
+   * the equivalent of 6pm) in Minecraft.
+   *
+   */
   Sunset = 12000,
+  /**
+   * @remarks
+   * Sets the time to night, which is time of the day 13,000 (or
+   * the equivalent of 7:00pm) in Minecraft.
+   *
+   */
   Night = 13000,
+  /**
+   * @remarks
+   * Sets the time to midnight, which is time of the day 18,000
+   * (or the equivalent of 12:00am) in Minecraft.
+   *
+   */
   Midnight = 18000,
+  /**
+   * @remarks
+   * Sets the time to sunrise, which is time of the day 23,000
+   * (or the equivalent of 5am) in Minecraft.
+   *
+   */
   Sunrise = 23000,
 }
 
@@ -748,10 +789,71 @@ export class Block {
   readonly z: number;
   /**
    * @remarks
+   * Returns the {@link Block} above this block (positive in the
+   * Y direction).
+   *
+   * @param steps
+   * Number of steps above to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  above(steps?: number): Block | undefined;
+  /**
+   * @remarks
+   * Returns the {@link Block} below this block (negative in the
+   * Y direction).
+   *
+   * @param steps
+   * Number of steps below to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  below(steps?: number): Block | undefined;
+  /**
+   * @remarks
+   * Returns the {@link @minecraft/server.Location} of the center
+   * of this block on the X and Z axis.
+   *
+   */
+  bottomCenter(): Vector3;
+  /**
+   * @remarks
+   * Returns the {@link @minecraft/server.Location} of the center
+   * of this block on the X, Y, and Z axis.
+   *
+   */
+  center(): Vector3;
+  /**
+   * @remarks
+   * Returns the {@link Block} to the east of this block
+   * (positive in the X direction).
+   *
+   * @param steps
+   * Number of steps to the east to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  east(steps?: number): Block | undefined;
+  /**
+   * @remarks
    * Gets a component (that represents additional capabilities)
    * for a block - for example, an inventory component of a chest
    * block.
    *
+   * @param componentId
+   * The identifier of the component (e.g.,
+   * 'minecraft:inventory'). If no namespace prefix is specified,
+   * 'minecraft:' is assumed. Available component IDs can be
+   * found as part of the {@link BlockComponentTypes} enum.
    * @returns
    * Returns the component if it exists on the block, otherwise
    * undefined.
@@ -761,7 +863,7 @@ export class Block {
    *
    * {@link LocationOutOfWorldBoundariesError}
    */
-  getComponent(componentName: string): BlockComponent | undefined;
+  getComponent(componentId: string): BlockComponent | undefined;
   /**
    * @remarks
    * Returns true if this reference to a block is still valid
@@ -772,6 +874,38 @@ export class Block {
    * True if this block object is still working and valid.
    */
   isValid(): boolean;
+  /**
+   * @remarks
+   * Returns the {@link Block} to the north of this block
+   * (negative in the Z direction).
+   *
+   * @param steps
+   * Number of steps to the north to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  north(steps?: number): Block | undefined;
+  /**
+   * @remarks
+   * Returns a block at an offset relative vector to this block.
+   *
+   * @param offset
+   * The offset vector. For example, an offset of 0, 1, 0 will
+   * return the block above the current block.
+   * @returns
+   * Block at the specified offset, or undefined if that block
+   * could not be retrieved (for example, the block and its
+   * relative chunk is not loaded yet.)
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  offset(offset: Vector3): Block | undefined;
   /**
    * @remarks
    * Sets the block in the dimension to the state of the
@@ -789,6 +923,34 @@ export class Block {
    * {@link LocationOutOfWorldBoundariesError}
    */
   setPermutation(permutation: BlockPermutation): void;
+  /**
+   * @remarks
+   * Returns the {@link Block} to the south of this block
+   * (positive in the Z direction).
+   *
+   * @param steps
+   * Number of steps to the south to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  south(steps?: number): Block | undefined;
+  /**
+   * @remarks
+   * Returns the {@link Block} to the west of this block
+   * (negative in the X direction).
+   *
+   * @param steps
+   * Number of steps to the west to step before returning.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  west(steps?: number): Block | undefined;
 }
 
 /**
@@ -1207,6 +1369,13 @@ export class Container {
  */
 export class Dimension {
   private constructor();
+  /**
+   * @remarks
+   * Height range of the dimension.
+   *
+   * @throws This property can throw when used.
+   */
+  readonly heightRange: minecraftcommon.NumberRange;
   /**
    * @remarks
    * Identifier of the dimension.
@@ -1917,6 +2086,14 @@ export class Entity {
   applyKnockback(directionX: number, directionZ: number, horizontalStrength: number, verticalStrength: number): void;
   /**
    * @remarks
+   * Clears all dynamic properties that have been set on this
+   * entity.
+   *
+   * @throws This function can throw errors.
+   */
+  clearDynamicProperties(): void;
+  /**
+   * @remarks
    * Sets the current velocity of the Entity to zero. Note that
    * this method may not have an impact on Players.
    *
@@ -1956,7 +2133,7 @@ export class Entity {
    * The identifier of the component (e.g., 'minecraft:health').
    * If no namespace prefix is specified, 'minecraft:' is
    * assumed. Available component IDs can be found as part of the
-   * {@link @minecraft/server.EntityComponentTypes} enum.
+   * {@link EntityComponentTypes} enum.
    * @returns
    * Returns the component if it exists on the entity, otherwise
    * undefined.
@@ -1972,6 +2149,40 @@ export class Entity {
    * and supported by the API.
    */
   getComponents(): EntityComponent[];
+  /**
+   * @remarks
+   * Returns a property value.
+   *
+   * @param identifier
+   * The property identifier.
+   * @returns
+   * Returns the value for the property, or undefined if the
+   * property has not been set.
+   * @throws This function can throw errors.
+   */
+  getDynamicProperty(identifier: string): boolean | number | string | Vector3 | undefined;
+  /**
+   * @remarks
+   * Returns the available set of dynamic property identifiers
+   * that have been used on this entity.
+   *
+   * @returns
+   * A string array of the dynamic properties set on this entity.
+   * @throws This function can throw errors.
+   */
+  getDynamicPropertyIds(): string[];
+  /**
+   * @remarks
+   * Returns the total size, in bytes, of all the dynamic
+   * properties that are currently stored for this entity.  This
+   * can be useful for diagnosing performance warning signs - if,
+   * for example, an entity has many megabytes of associated
+   * dynamic properties, it may be slow to load on various
+   * devices.
+   *
+   * @throws This function can throw errors.
+   */
+  getDynamicPropertyTotalByteCount(): number;
   /**
    * @remarks
    * Returns the effect for the specified EffectType on the
@@ -2150,6 +2361,29 @@ export class Entity {
   kill(): boolean;
   /**
    * @remarks
+   * Matches the entity against the passed in options. Uses the
+   * location of the entity for matching if the location is not
+   * specified in the passed in EntityQueryOptions.
+   *
+   * @returns
+   * Returns true if the entity matches the criteria in the
+   * passed in EntityQueryOptions, otherwise it returns false.
+   * @throws This function can throw errors.
+   */
+  matches(options: EntityQueryOptions): boolean;
+  /**
+   * @remarks
+   * Immediately removes the entity from the world. The removed
+   * entity will not perform a death animation or drop loot upon
+   * removal.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  remove(): void;
+  /**
+   * @remarks
    * Removes the specified EffectType on the entity, or returns
    * false if the effect is not present.
    *
@@ -2233,6 +2467,17 @@ export class Entity {
    * @throws This function can throw errors.
    */
   runCommandAsync(commandString: string): Promise<CommandResult>;
+  /**
+   * @remarks
+   * Sets a specified property to a value.
+   *
+   * @param identifier
+   * The property identifier.
+   * @param value
+   * Data value of the property to set.
+   * @throws This function can throw errors.
+   */
+  setDynamicProperty(identifier: string, value?: boolean | number | string | Vector3): void;
   /**
    * @remarks
    * Sets an Entity Property to the provided value. This property
@@ -2931,7 +3176,7 @@ export class EntityInventoryComponent extends EntityComponent {
    *
    * @throws This property can throw when used.
    */
-  readonly container: Container;
+  readonly container?: Container;
   /**
    * @remarks
    * Type of container this entity has.
@@ -3940,7 +4185,7 @@ export class ItemStack {
    * The identifier of the component (e.g., 'minecraft:food'). If
    * no namespace prefix is specified, 'minecraft:' is assumed.
    * Available component IDs can be found as part of the {@link
-   * @minecraft/server.ItemComponentTypes} enum.
+   * ItemComponentTypes} enum.
    * @returns
    * Returns the component if it exists on the item stack,
    * otherwise undefined.
@@ -4180,7 +4425,7 @@ export class ItemStartUseOnAfterEvent {
    * with an empty hand.
    *
    */
-  readonly itemStack: ItemStack;
+  readonly itemStack?: ItemStack;
   /**
    * @remarks
    * Returns the source entity that triggered this item event.
@@ -4230,7 +4475,7 @@ export class ItemStopUseAfterEvent {
    * different dimension and this can be undefined.
    *
    */
-  readonly itemStack: ItemStack;
+  readonly itemStack?: ItemStack;
   /**
    * @remarks
    * Returns the source entity that triggered this item event.
@@ -5098,6 +5343,260 @@ export class PlayerDimensionChangeAfterEventSignal {
 }
 
 /**
+ * Contains information regarding an event after a player
+ * interacts with a block.
+ */
+export class PlayerInteractWithBlockAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The block that will be interacted with.
+   *
+   */
+  readonly block: Block;
+  /**
+   * @remarks
+   * The face of the block that is being interacted with.
+   *
+   */
+  readonly blockFace: Direction;
+  /**
+   * @remarks
+   * Location relative to the bottom north-west corner of the
+   * block where the item is placed.
+   *
+   */
+  readonly faceLocation: Vector3;
+  /**
+   * @remarks
+   * The item stack that is being used in the interaction, or
+   * undefined if empty hand.
+   *
+   */
+  readonly itemStack?: ItemStack;
+  /**
+   * @remarks
+   * Source Player for this event.
+   *
+   */
+  readonly player: Player;
+}
+
+/**
+ * Manages callbacks that are connected to after a player
+ * interacts with a block.
+ */
+export class PlayerInteractWithBlockAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called after a player interacts
+   * with a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PlayerInteractWithBlockAfterEvent) => void): (arg: PlayerInteractWithBlockAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called after a player
+   * interacts with a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PlayerInteractWithBlockAfterEvent) => void): void;
+}
+
+/**
+ * Contains information regarding an event before a player
+ * interacts with a block.
+ */
+export class PlayerInteractWithBlockBeforeEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The block that will be interacted with.
+   *
+   */
+  readonly block: Block;
+  /**
+   * @remarks
+   * The face of the block that is being interacted with.
+   *
+   */
+  readonly blockFace: Direction;
+  /**
+   * @remarks
+   * If set to true the interaction will be cancelled.
+   *
+   */
+  cancel: boolean;
+  /**
+   * @remarks
+   * Location relative to the bottom north-west corner of the
+   * block where the item is placed.
+   *
+   */
+  readonly faceLocation: Vector3;
+  /**
+   * @remarks
+   * The item stack that is being used in the interaction, or
+   * undefined if empty hand.
+   *
+   */
+  readonly itemStack?: ItemStack;
+  /**
+   * @remarks
+   * Source Player for this event.
+   *
+   */
+  readonly player: Player;
+}
+
+/**
+ * Manages callbacks that are connected to before a player
+ * interacts with a block.
+ */
+export class PlayerInteractWithBlockBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called before a player
+   * interacts with a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PlayerInteractWithBlockBeforeEvent) => void): (arg: PlayerInteractWithBlockBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called before a player
+   * interacts with a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PlayerInteractWithBlockBeforeEvent) => void): void;
+}
+
+/**
+ * Contains information regarding an event after a player
+ * interacts with an entity.
+ */
+export class PlayerInteractWithEntityAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * The item stack that is being used in the interaction, or
+   * undefined if empty hand.
+   *
+   */
+  readonly itemStack?: ItemStack;
+  /**
+   * @remarks
+   * Source Player for this event.
+   *
+   */
+  readonly player: Player;
+  /**
+   * @remarks
+   * The entity that will be interacted with.
+   *
+   */
+  readonly target: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to after a player
+ * interacts with an entity.
+ */
+export class PlayerInteractWithEntityAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called after a player interacts
+   * with an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PlayerInteractWithEntityAfterEvent) => void): (arg: PlayerInteractWithEntityAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called after a player
+   * interacts with an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PlayerInteractWithEntityAfterEvent) => void): void;
+}
+
+/**
+ * Contains information regarding an event before a player
+ * interacts with an entity.
+ */
+export class PlayerInteractWithEntityBeforeEvent {
+  private constructor();
+  /**
+   * @remarks
+   * If set to true the interaction will be cancelled.
+   *
+   */
+  cancel: boolean;
+  /**
+   * @remarks
+   * The item stack that is being used in the interaction, or
+   * undefined if empty hand.
+   *
+   */
+  readonly itemStack?: ItemStack;
+  /**
+   * @remarks
+   * Source Player for this event.
+   *
+   */
+  readonly player: Player;
+  /**
+   * @remarks
+   * The entity that will be interacted with.
+   *
+   */
+  readonly target: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to before a player
+ * interacts with an entity.
+ */
+export class PlayerInteractWithEntityBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called before a player
+   * interacts with an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PlayerInteractWithEntityBeforeEvent) => void): (arg: PlayerInteractWithEntityBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called before a player
+   * interacts with an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PlayerInteractWithEntityBeforeEvent) => void): void;
+}
+
+/**
  * Contains information regarding a player that has joined.
  * See the playerSpawn event for more detailed information that
  * could be returned after the first time a player has spawned
@@ -5156,6 +5655,28 @@ export class PlayerLeaveAfterEvent {
 // @ts-ignore Class inheritance allowed for native defined classes
 export class PlayerLeaveAfterEventSignal extends IPlayerLeaveAfterEventSignal {
   private constructor();
+}
+
+export class PlayerLeaveBeforeEvent {
+  private constructor();
+  readonly player: Player;
+}
+
+export class PlayerLeaveBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: PlayerLeaveBeforeEvent) => void): (arg: PlayerLeaveBeforeEvent) => void;
+  /**
+   * @remarks
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: PlayerLeaveBeforeEvent) => void): void;
 }
 
 /**
@@ -6129,6 +6650,13 @@ export class World {
   readonly scoreboard: Scoreboard;
   /**
    * @remarks
+   * Clears the set of dynamic properties declared for this
+   * behavior pack within the world.
+   *
+   */
+  clearDynamicProperties(): void;
+  /**
+   * @remarks
    * Returns the absolute time since the start of the world.
    *
    */
@@ -6172,6 +6700,101 @@ export class World {
    * Throws if the given dimension name is invalid
    */
   getDimension(dimensionId: string): Dimension;
+  /**
+   * @remarks
+   * Returns a property value.
+   *
+   * @param identifier
+   * The property identifier.
+   * @returns
+   * Returns the value for the property, or undefined if the
+   * property has not been set.
+   * @throws
+   * Throws if the given dynamic property identifier is not
+   * defined.
+   * @example incrementProperty.ts
+   * ```typescript
+   *   let number = mc.world.getDynamicProperty("samplelibrary:number");
+   *
+   *   log("Current value is: " + number);
+   *
+   *   if (number === undefined) {
+   *     number = 0;
+   *   }
+   *
+   *   if (typeof number !== "number") {
+   *     log("Number is of an unexpected type.");
+   *     return -1;
+   *   }
+   *
+   *   mc.world.setDynamicProperty("samplelibrary:number", number + 1);
+   * ```
+   * @example incrementPropertyInJsonBlob.ts
+   * ```typescript
+   *   let paintStr = mc.world.getDynamicProperty("samplelibrary:longerjson");
+   *   let paint: { color: string; intensity: number } | undefined = undefined;
+   *
+   *   log("Current value is: " + paintStr);
+   *
+   *   if (paintStr === undefined) {
+   *     paint = {
+   *       color: "purple",
+   *       intensity: 0,
+   *     };
+   *   } else {
+   *     if (typeof paintStr !== "string") {
+   *       log("Paint is of an unexpected type.");
+   *       return -1;
+   *     }
+   *
+   *     try {
+   *       paint = JSON.parse(paintStr);
+   *     } catch (e) {
+   *       log("Error parsing serialized struct.");
+   *       return -1;
+   *     }
+   *   }
+   *
+   *   if (!paint) {
+   *     log("Error parsing serialized struct.");
+   *     return -1;
+   *   }
+   *
+   *   paint.intensity++;
+   *   paintStr = JSON.stringify(paint); // be very careful to ensure your serialized JSON str cannot exceed limits
+   *   mc.world.setDynamicProperty("samplelibrary:longerjson", paintStr);
+   * ```
+   */
+  getDynamicProperty(identifier: string): boolean | number | string | Vector3 | undefined;
+  /**
+   * @remarks
+   * Gets a set of dynamic property identifiers that have been
+   * set in this world.
+   *
+   * @returns
+   * A string array of active dynamic property identifiers.
+   */
+  getDynamicPropertyIds(): string[];
+  /**
+   * @remarks
+   * Gets the total byte count of dynamic properties. This could
+   * potentially be used for your own analytics to ensure you're
+   * not storing gigantic sets of dynamic properties.
+   *
+   */
+  getDynamicPropertyTotalByteCount(): number;
+  /**
+   * @remarks
+   * Returns an entity based on the provided id.
+   *
+   * @param id
+   * The id of the entity.
+   * @returns
+   * The requested entity object.
+   * @throws
+   * Throws if the given entity id is invalid.
+   */
+  getEntity(id: string): Entity | undefined;
   /**
    * @remarks
    * Returns the MoonPhase for the current time.
@@ -6352,6 +6975,71 @@ export class World {
    * {@link LocationOutOfWorldBoundariesError}
    */
   setDefaultSpawnLocation(spawnLocation: Vector3): void;
+  /**
+   * @remarks
+   * Sets a specified property to a value.
+   *
+   * @param identifier
+   * The property identifier.
+   * @param value
+   * Data value of the property to set.
+   * @throws
+   * Throws if the given dynamic property identifier is not
+   * defined.
+   * @example incrementProperty.ts
+   * ```typescript
+   *   let number = mc.world.getDynamicProperty("samplelibrary:number");
+   *
+   *   log("Current value is: " + number);
+   *
+   *   if (number === undefined) {
+   *     number = 0;
+   *   }
+   *
+   *   if (typeof number !== "number") {
+   *     log("Number is of an unexpected type.");
+   *     return -1;
+   *   }
+   *
+   *   mc.world.setDynamicProperty("samplelibrary:number", number + 1);
+   * ```
+   * @example incrementPropertyInJsonBlob.ts
+   * ```typescript
+   *   let paintStr = mc.world.getDynamicProperty("samplelibrary:longerjson");
+   *   let paint: { color: string; intensity: number } | undefined = undefined;
+   *
+   *   log("Current value is: " + paintStr);
+   *
+   *   if (paintStr === undefined) {
+   *     paint = {
+   *       color: "purple",
+   *       intensity: 0,
+   *     };
+   *   } else {
+   *     if (typeof paintStr !== "string") {
+   *       log("Paint is of an unexpected type.");
+   *       return -1;
+   *     }
+   *
+   *     try {
+   *       paint = JSON.parse(paintStr);
+   *     } catch (e) {
+   *       log("Error parsing serialized struct.");
+   *       return -1;
+   *     }
+   *   }
+   *
+   *   if (!paint) {
+   *     log("Error parsing serialized struct.");
+   *     return -1;
+   *   }
+   *
+   *   paint.intensity++;
+   *   paintStr = JSON.stringify(paint); // be very careful to ensure your serialized JSON str cannot exceed limits
+   *   mc.world.setDynamicProperty("samplelibrary:longerjson", paintStr);
+   * ```
+   */
+  setDynamicProperty(identifier: string, value?: boolean | number | string | Vector3): void;
   /**
    * @remarks
    * Sets the time of day.
@@ -6617,6 +7305,12 @@ export class WorldBeforeEvents {
    *
    */
   readonly playerBreakBlock: PlayerBreakBlockBeforeEventSignal;
+  /**
+   * @remarks
+   * Fires when a player leaves the game.
+   *
+   */
+  readonly playerLeave: PlayerLeaveBeforeEventSignal;
 }
 
 /**
@@ -6717,6 +7411,11 @@ export interface BlockRaycastOptions {
 }
 
 export interface CameraDefaultOptions {
+  /**
+   * @remarks
+   * Sets a set of easing options for the camera.
+   *
+   */
   easeOptions: CameraEaseOptions;
 }
 
@@ -6945,7 +7644,7 @@ export interface EntityHitInformation {
    * Entity that was hit.
    *
    */
-  entity: Entity;
+  entity?: Entity;
 }
 
 /**
@@ -7537,6 +8236,12 @@ export class LocationOutOfWorldBoundariesError extends Error {
  *
  */
 export const MoonPhaseCount = 8;
+/**
+ * @remarks
+ * How many times the server ticks per second of real time.
+ *
+ */
+export const TicksPerSecond = 20;
 /**
  * @remarks
  * A class that provides system-level events and functions.
