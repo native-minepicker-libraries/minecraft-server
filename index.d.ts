@@ -15,7 +15,7 @@
  * ```json
  * {
  *   "module_name": "@minecraft/server",
- *   "version": "1.4.0"
+ *   "version": "1.5.0"
  * }
  * ```
  *
@@ -118,6 +118,55 @@ export enum EntityDamageCause {
   thorns = "thorns",
   "void" = "void",
   wither = "wither",
+}
+
+/**
+ * The equipment slot of the mob. This includes armor, offhand
+ * and mainhand slots.
+ */
+export enum EquipmentSlot {
+  /**
+   * @remarks
+   * The chest slot. This slot is used to hold items such as
+   * Chestplate or Elytra.
+   *
+   */
+  Chest = "Chest",
+  /**
+   * @remarks
+   * The feet slot. This slot is used to hold items such as
+   * Boots.
+   *
+   */
+  Feet = "Feet",
+  /**
+   * @remarks
+   * The head slot. This slot is used to hold items such as
+   * Helmets or Carved Pumpkins.
+   *
+   */
+  Head = "Head",
+  /**
+   * @remarks
+   * The legs slot. This slot is used to hold items such as
+   * Leggings.
+   *
+   */
+  Legs = "Legs",
+  /**
+   * @remarks
+   * The mainhand slot. For players, the mainhand slot refers to
+   * the currently active hotbar slot.
+   *
+   */
+  Mainhand = "Mainhand",
+  /**
+   * @remarks
+   * The offhand slot. This slot is used to hold items such as
+   * shields and maps.
+   *
+   */
+  Offhand = "Offhand",
 }
 
 /**
@@ -1042,6 +1091,42 @@ export class Dimension {
    * ```
    */
   spawnItem(itemStack: ItemStack, location: Vector3): Entity;
+  /**
+   * @remarks
+   * Creates a new particle emitter at a specified location in
+   * the world.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param effectName
+   * Identifier of the particle to create.
+   * @param location
+   * The location at which to create the particle emitter.
+   * @param molangVariables
+   * A set of optional, customizable variables that can be
+   * adjusted for this particle.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   * @example spawnParticle.ts
+   * ```typescript
+   *   for (let i = 0; i < 100; i++) {
+   *     const molang = new mc.MolangVariableMap();
+   *
+   *     molang.setColorRGB("variable.color", { red: Math.random(), green: Math.random(), blue: Math.random(), alpha: 1 });
+   *
+   *     let newLocation = {
+   *       x: targetLocation.x + Math.floor(Math.random() * 8) - 4,
+   *       y: targetLocation.y + Math.floor(Math.random() * 8) - 4,
+   *       z: targetLocation.z + Math.floor(Math.random() * 8) - 4,
+   *     };
+   *     overworld.spawnParticle("minecraft:colored_flame_particle", newLocation, molang);
+   *   }
+   * ```
+   */
+  spawnParticle(effectName: string, location: Vector3, molangVariables?: MolangVariableMap): void;
 }
 
 /**
@@ -1646,6 +1731,29 @@ export class Entity {
   teleport(location: Vector3, teleportOptions?: TeleportOptions): void;
   /**
    * @remarks
+   * Triggers an entity type event. For every entity, a number of
+   * events are defined in an entities' definition for key entity
+   * behaviors; for example, creepers have a
+   * minecraft:start_exploding type event.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param eventName
+   * Name of the entity type event to trigger. If a namespace is
+   * not specified, minecraft: is assumed.
+   * @throws
+   * If the event is not defined in the definition of the entity,
+   * an error will be thrown.
+   * @example triggerEvent.ts
+   * ```typescript
+   *   const creeper = overworld.spawnEntity("minecraft:creeper", targetLocation);
+   *
+   *   creeper.triggerEvent("minecraft:start_exploding_forced");
+   * ```
+   */
+  triggerEvent(eventName: string): void;
+  /**
+   * @remarks
    * Attempts to try a teleport, but may not complete the
    * teleport operation (for example, if there are blocks at the
    * destination.)
@@ -1869,6 +1977,43 @@ export class EntityDieAfterEventSignal {
    * @throws This function can throw errors.
    */
   unsubscribe(callback: (arg: EntityDieAfterEvent) => void): void;
+}
+
+/**
+ * Provides access to a mob's equipment slots. This component
+ * exists for all mob entities.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class EntityEquippableComponent extends EntityComponent {
+  private constructor();
+  static readonly componentId = "minecraft:equippable";
+  /**
+   * @remarks
+   * Gets the equipped item for the given EquipmentSlot.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param equipmentSlot
+   * The equipment slot. e.g. "head", "chest", "offhand"
+   * @returns
+   * Returns the item equipped to the given EquipmentSlot. If
+   * empty, returns undefined.
+   * @throws This function can throw errors.
+   */
+  getEquipment(equipmentSlot: EquipmentSlot): ItemStack | undefined;
+  /**
+   * @remarks
+   * Replaces the item in the given EquipmentSlot.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @param equipmentSlot
+   * The equipment slot. e.g. "head", "chest", "offhand".
+   * @param itemStack
+   * The item to equip. If undefined, clears the slot.
+   * @throws This function can throw errors.
+   */
+  setEquipment(equipmentSlot: EquipmentSlot, itemStack?: ItemStack): boolean;
 }
 
 /**
@@ -3516,6 +3661,74 @@ export class MinecraftDimensionTypes {
 }
 
 /**
+ * Contains a set of additional variable values for further
+ * defining how rendering and animations function.
+ */
+export class MolangVariableMap {
+  /**
+   * @remarks
+   * Adds the following variables to Molang:
+   * - `<variable_name>.r` - Red color value [0-1]
+   * - `<variable_name>.g` - Green color value [0-1]
+   * - `<variable_name>.b` - Blue color value [0-1]
+   *
+   * @throws This function can throw errors.
+   */
+  setColorRGB(variableName: string, color: RGB): void;
+  /**
+   * @remarks
+   * Adds the following variables to Molang:
+   * - `<variable_name>.r` - Red color value [0-1]
+   * - `<variable_name>.g` - Green color value [0-1]
+   * - `<variable_name>.b` - Blue color value [0-1]
+   * - `<variable_name>.a` - Alpha (transparency) color value
+   * [0-1]
+   *
+   * @throws This function can throw errors.
+   */
+  setColorRGBA(variableName: string, color: RGBA): void;
+  /**
+   * @remarks
+   * Sets a numeric (decimal) value within the Molang variable
+   * map.
+   *
+   * @param variableName
+   * Name of the float-based number to set.
+   * @param number
+   * Value for the Molang-based variable to set.
+   * @throws This function can throw errors.
+   */
+  setFloat(variableName: string, number: number): void;
+  /**
+   * @remarks
+   * Adds the following variables to Molang:
+   * - `<variable_name>.speed` - Speed number provided
+   * - `<variable_name>.direction_x` - X value from the {@link
+   * Vector3} provided
+   * - `<variable_name>.direction_y` - Y value from the {@link
+   * Vector3} provided
+   * - `<variable_name>.direction_z` - Z value from the {@link
+   * Vector3} provided
+   *
+   * @throws This function can throw errors.
+   */
+  setSpeedAndDirection(variableName: string, speed: number, direction: Vector3): void;
+  /**
+   * @remarks
+   * Adds the following variables to Molang:
+   * - `<variable_name>.x` - X value from the {@link Vector3}
+   * provided
+   * - `<variable_name>.y` - Y value from the {@link Vector3}
+   * provided
+   * - `<variable_name>.z` - Z value from the {@link Vector3}
+   * provided
+   *
+   * @throws This function can throw errors.
+   */
+  setVector3(variableName: string, vector: Vector3): void;
+}
+
+/**
  * Represents a player within the world.
  */
 // @ts-ignore Class inheritance allowed for native defined classes
@@ -3845,6 +4058,154 @@ export class PressurePlatePushAfterEventSignal {
    * @throws This function can throw errors.
    */
   unsubscribe(callback: (arg: PressurePlatePushAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to a projectile hitting a
+ * block.
+ */
+export class ProjectileHitBlockAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Dimension where this projectile hit took place.
+   *
+   */
+  readonly dimension: Dimension;
+  /**
+   * @remarks
+   * Direction vector of the projectile as it hit a block.
+   *
+   */
+  readonly hitVector: Vector3;
+  /**
+   * @remarks
+   * Location where the projectile hit occurred.
+   *
+   */
+  readonly location: Vector3;
+  /**
+   * @remarks
+   * Entity for the projectile that hit a block.
+   *
+   */
+  readonly projectile: Entity;
+  /**
+   * @remarks
+   * Optional source entity that fired the projectile.
+   *
+   */
+  readonly source?: Entity;
+  /**
+   * @remarks
+   * Contains additional information about the block that was hit
+   * by the projectile.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  getBlockHit(): BlockHitInformation;
+}
+
+/**
+ * Manages callbacks that are connected to when a projectile
+ * hits a block.
+ */
+export class ProjectileHitBlockAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a projectile hits a
+   * block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ProjectileHitBlockAfterEvent) => void): (arg: ProjectileHitBlockAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a projectile hits
+   * a block.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ProjectileHitBlockAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to a projectile hitting an
+ * entity.
+ */
+export class ProjectileHitEntityAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Dimension where this projectile hit took place.
+   *
+   */
+  readonly dimension: Dimension;
+  /**
+   * @remarks
+   * Direction vector of the projectile as it hit an entity.
+   *
+   */
+  readonly hitVector: Vector3;
+  /**
+   * @remarks
+   * Location where the projectile hit occurred.
+   *
+   */
+  readonly location: Vector3;
+  /**
+   * @remarks
+   * Entity for the projectile that hit an entity.
+   *
+   */
+  readonly projectile: Entity;
+  /**
+   * @remarks
+   * Optional source entity that fired the projectile.
+   *
+   */
+  readonly source?: Entity;
+  /**
+   * @remarks
+   * Contains additional information about an entity that was
+   * hit.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  getEntityHit(): EntityHitInformation;
+}
+
+/**
+ * Manages callbacks that are connected to when a projectile
+ * hits an entity.
+ */
+export class ProjectileHitEntityAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when a projectile hits
+   * an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ProjectileHitEntityAfterEvent) => void): (arg: ProjectileHitEntityAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when a projectile hits
+   * an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ProjectileHitEntityAfterEvent) => void): void;
 }
 
 /**
@@ -4871,6 +5232,18 @@ export class WorldAfterEvents {
   readonly pressurePlatePush: PressurePlatePushAfterEventSignal;
   /**
    * @remarks
+   * This event fires when a projectile hits a block.
+   *
+   */
+  readonly projectileHitBlock: ProjectileHitBlockAfterEventSignal;
+  /**
+   * @remarks
+   * This event fires when a projectile hits an entity.
+   *
+   */
+  readonly projectileHitEntity: ProjectileHitEntityAfterEventSignal;
+  /**
+   * @remarks
    * A target block was hit.
    *
    */
@@ -4906,6 +5279,31 @@ export class WorldBeforeEvents {
    *
    */
   readonly itemUseOn: ItemUseOnBeforeEventSignal;
+}
+
+/**
+ * Contains more information for events where a block is hit.
+ */
+export interface BlockHitInformation {
+  /**
+   * @remarks
+   * Block that was hit.
+   *
+   */
+  block: Block;
+  /**
+   * @remarks
+   * Face of the block that was hit.
+   *
+   */
+  face: Direction;
+  /**
+   * @remarks
+   * Location relative to the bottom north-west corner of the
+   * block.
+   *
+   */
+  faceLocation: Vector3;
 }
 
 /**
@@ -5090,6 +5488,19 @@ export interface EntityEventOptions {
    *
    */
   entityTypes?: string[];
+}
+
+/**
+ * Contains additional information about an entity that was
+ * hit.
+ */
+export interface EntityHitInformation {
+  /**
+   * @remarks
+   * Entity that was hit.
+   *
+   */
+  entity: Entity;
 }
 
 /**
@@ -5426,6 +5837,67 @@ export interface RawMessageScore {
    *
    */
   objective?: string;
+}
+
+/**
+ * Represents a fully customizable color within Minecraft.
+ */
+export interface RGB {
+  /**
+   * @remarks
+   * Determines a color's blue component. Valid values are
+   * between 0 and 1.0.
+   *
+   */
+  blue: number;
+  /**
+   * @remarks
+   * Determines a color's green component. Valid values are
+   * between 0 and 1.0.
+   *
+   */
+  green: number;
+  /**
+   * @remarks
+   * Determines a color's red component. Valid values are between
+   * 0 and 1.0.
+   *
+   */
+  red: number;
+}
+
+/**
+ * Represents a fully customizable color within Minecraft.
+ */
+export interface RGBA {
+  /**
+   * @remarks
+   * Determines a color's alpha (opacity) component. Valid values
+   * are between 0 (transparent) and 1.0 (opaque).
+   *
+   */
+  alpha: number;
+  /**
+   * @remarks
+   * Determines a color's blue component. Valid values are
+   * between 0 and 1.0.
+   *
+   */
+  blue: number;
+  /**
+   * @remarks
+   * Determines a color's green component. Valid values are
+   * between 0 and 1.0.
+   *
+   */
+  green: number;
+  /**
+   * @remarks
+   * Determines a color's red component. Valid values are between
+   * 0 and 1.0.
+   *
+   */
+  red: number;
 }
 
 /**
