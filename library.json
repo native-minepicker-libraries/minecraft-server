@@ -1,3 +1,5 @@
 {
-  "dependencies": {}
+  "dependencies": {
+    "@minecraft/common": "^1.0.0"
+  }
 }
