@@ -15,7 +15,7 @@
  * ```json
  * {
  *   "module_name": "@minecraft/server",
- *   "version": "1.7.0"
+ *   "version": "1.8.0"
  * }
  * ```
  *
@@ -419,6 +419,37 @@ export enum EquipmentSlot {
    *
    */
   Offhand = "Offhand",
+}
+
+/**
+ * Represents the type of fluid for use within a fluid
+ * containing block, like a cauldron.
+ */
+export enum FluidType {
+  /**
+   * @remarks
+   * Represents lava as a type of fluid.
+   *
+   */
+  Lava = "Lava",
+  /**
+   * @remarks
+   * Represents a potion as a type of fluid.
+   *
+   */
+  Potion = "Potion",
+  /**
+   * @remarks
+   * Represents powder snow as a type of fluid.
+   *
+   */
+  PowderSnow = "PowderSnow",
+  /**
+   * @remarks
+   * Represents water as a type of fluida.
+   *
+   */
+  Water = "Water",
 }
 
 /**
@@ -866,6 +897,47 @@ export class Block {
   getComponent(componentId: string): BlockComponent | undefined;
   /**
    * @remarks
+   * Returns a set of tags for a block.
+   *
+   * @returns
+   * The list of tags that the block has.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   */
+  getTags(): string[];
+  /**
+   * @remarks
+   * Checks to see if the permutation of this block has a
+   * specific tag.
+   *
+   * @param tag
+   * Tag to check for.
+   * @returns
+   * Returns `true` if the permutation of this block has the tag,
+   * else `false`.
+   * @throws This function can throw errors.
+   *
+   * {@link LocationInUnloadedChunkError}
+   *
+   * {@link LocationOutOfWorldBoundariesError}
+   * @example check_block_tags.js
+   * ```typescript
+   * import { world } from "@minecraft/server";
+   *
+   * // Fetch the block
+   * const block = world.getDimension("overworld").getBlock({ x: 1, y: 2, z: 3 });
+   *
+   * console.log(`Block is dirt: ${block.hasTag("dirt")}`);
+   * console.log(`Block is wood: ${block.hasTag("wood")}`);
+   * console.log(`Block is stone: ${block.hasTag("stone")}`);
+   * ```
+   */
+  hasTag(tag: string): boolean;
+  /**
+   * @remarks
    * Returns true if this reference to a block is still valid
    * (for example, if the block is unloaded, references to that
    * block will no longer be valid.)
@@ -1015,6 +1087,17 @@ export class BlockPermutation {
   private constructor();
   /**
    * @remarks
+   * Gets a state for the permutation.
+   *
+   * @param stateName
+   * Name of the block state who's value is to be returned.
+   * @returns
+   * Returns the state if the permutation has it, else
+   * `undefined`.
+   */
+  getState(stateName: string): boolean | number | string | undefined;
+  /**
+   * @remarks
    * Returns a boolean whether a specified permutation matches
    * this permutation. If states is not specified, matches checks
    * against the set of types more broadly.
@@ -1023,6 +1106,18 @@ export class BlockPermutation {
    * An optional set of states to compare against.
    */
   matches(blockName: string, states?: Record<string, boolean | number | string>): boolean;
+  /**
+   * @remarks
+   * Returns a derived BlockPermutation with a specific property
+   * set.
+   *
+   * @param name
+   * Identifier of the block property.
+   * @param value
+   * Value of the block property.
+   * @throws This function can throw errors.
+   */
+  withState(name: string, value: boolean | number | string): BlockPermutation;
   /**
    * @remarks
    * Given a type identifier and an optional set of properties,
@@ -1074,6 +1169,16 @@ export class BlockPermutation {
    * ```
    */
   static resolve(blockName: string, states?: Record<string, boolean | number | string>): BlockPermutation;
+}
+
+/**
+ * The type (or template) of a block. Does not contain
+ * permutation data (state) other than the type of block it
+ * represents. This type was introduced as of version
+ * 1.17.10.21.
+ */
+export class BlockType {
+  private constructor();
 }
 
 /**
@@ -1361,6 +1466,65 @@ export class Container {
    * ```
    */
   transferItem(fromSlot: number, toContainer: Container): ItemStack | undefined;
+}
+
+/**
+ * Contains information related to firing of a data driven
+ * entity event - for example, the minecraft:ageable_grow_up
+ * event on a chicken.
+ */
+export class DataDrivenEntityTriggerAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Entity that the event triggered on.
+   *
+   */
+  readonly entity: Entity;
+  /**
+   * @remarks
+   * Name of the data driven event being triggered.
+   *
+   */
+  readonly eventId: string;
+  /**
+   * @remarks
+   * An updateable list of modifications to component state that
+   * are the effect of this triggered event.
+   *
+   */
+  getModifiers(): DefinitionModifier[];
+}
+
+/**
+ * Contains event registration related to firing of a data
+ * driven entity event - for example, the
+ * minecraft:ageable_grow_up event on a chicken.
+ */
+export class DataDrivenEntityTriggerAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called after a data driven
+   * entity event is triggered.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(
+    callback: (arg: DataDrivenEntityTriggerAfterEvent) => void,
+    options?: EntityDataDrivenTriggerEventOptions
+  ): (arg: DataDrivenEntityTriggerAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback that will be called after a data driven
+   * entity event is triggered.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: DataDrivenEntityTriggerAfterEvent) => void): void;
 }
 
 /**
@@ -1771,6 +1935,112 @@ export class Effect {
 }
 
 /**
+ * Contains information related to changes to an effect - like
+ * poison - being added to an entity.
+ */
+export class EffectAddAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Additional properties and details of the effect.
+   *
+   */
+  readonly effect: Effect;
+  /**
+   * @remarks
+   * Entity that the effect is being added to.
+   *
+   */
+  readonly entity: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when an effect is
+ * added to an entity.
+ */
+export class EffectAddAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an effect is added
+   * to an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EffectAddAfterEvent) => void, options?: EntityEventOptions): (arg: EffectAddAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an effect is added
+   * to an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EffectAddAfterEvent) => void): void;
+}
+
+/**
+ * Contains information related to changes to an effect - like
+ * poison - being added to an entity.
+ */
+export class EffectAddBeforeEvent {
+  private constructor();
+  /**
+   * @remarks
+   * When set to true will cancel the event.
+   *
+   */
+  cancel: boolean;
+  /**
+   * @remarks
+   * Effect duration.
+   *
+   */
+  duration: number;
+  /**
+   * @remarks
+   * The type of the effect that is being added.
+   *
+   */
+  readonly effectType: string;
+  /**
+   * @remarks
+   * Entity that the effect is being added to.
+   *
+   */
+  readonly entity: Entity;
+}
+
+/**
+ * Manages callbacks that are connected to when an effect is
+ * added to an entity.
+ */
+export class EffectAddBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an effect is added
+   * to an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: EffectAddBeforeEvent) => void): (arg: EffectAddBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an effect is added
+   * to an entity.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: EffectAddBeforeEvent) => void): void;
+}
+
+/**
  * Represents a type of effect - like poison - that can be
  * applied to an entity.
  */
@@ -2174,11 +2444,11 @@ export class Entity {
   /**
    * @remarks
    * Returns the total size, in bytes, of all the dynamic
-   * properties that are currently stored for this entity.  This
-   * can be useful for diagnosing performance warning signs - if,
-   * for example, an entity has many megabytes of associated
-   * dynamic properties, it may be slow to load on various
-   * devices.
+   * properties that are currently stored for this entity. This
+   * includes the size of both the key and the value.  This can
+   * be useful for diagnosing performance warning signs - if, for
+   * example, an entity has many megabytes of associated dynamic
+   * properties, it may be slow to load on various devices.
    *
    * @throws This function can throw errors.
    */
@@ -2260,8 +2530,10 @@ export class Entity {
   getRotation(): Vector2;
   /**
    * @remarks
+   * Returns all tags associated with the entity.
+   *
    * @returns
-   * Returns all tags associated with an entity.
+   * An array containing all tags as strings.
    * @throws This function can throw errors.
    */
   getTags(): string[];
@@ -2365,10 +2637,13 @@ export class Entity {
    * location of the entity for matching if the location is not
    * specified in the passed in EntityQueryOptions.
    *
+   * @param options
+   * The query to perform the match against.
    * @returns
    * Returns true if the entity matches the criteria in the
    * passed in EntityQueryOptions, otherwise it returns false.
-   * @throws This function can throw errors.
+   * @throws
+   * Throws if the query options are misconfigured.
    */
   matches(options: EntityQueryOptions): boolean;
   /**
@@ -2807,8 +3082,6 @@ export class EntityEquippableComponent extends EntityComponent {
   /**
    * @remarks
    * Gets the equipped item for the given EquipmentSlot.
-   *
-   * This function can't be called in read-only mode.
    *
    * @param equipmentSlot
    * The equipment slot. e.g. "head", "chest", "offhand"
@@ -3747,6 +4020,111 @@ export class EntityWantsJockeyComponent extends EntityComponent {
 }
 
 /**
+ * Contains information regarding an explosion that has
+ * happened.
+ */
+export class ExplosionAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * Dimension where the explosion has occurred.
+   *
+   */
+  readonly dimension: Dimension;
+  /**
+   * @remarks
+   * Optional source of the explosion.
+   *
+   */
+  readonly source?: Entity;
+  /**
+   * @remarks
+   * A collection of blocks impacted by this explosion event.
+   *
+   */
+  getImpactedBlocks(): Block[];
+}
+
+/**
+ * Manages callbacks that are connected to when an explosion
+ * occurs.
+ */
+export class ExplosionAfterEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when an explosion
+   * occurs.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ExplosionAfterEvent) => void): (arg: ExplosionAfterEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called when an explosion
+   * occurs.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ExplosionAfterEvent) => void): void;
+}
+
+/**
+ * Contains information regarding an explosion that has
+ * happened.
+ */
+// @ts-ignore Class inheritance allowed for native defined classes
+export class ExplosionBeforeEvent extends ExplosionAfterEvent {
+  private constructor();
+  /**
+   * @remarks
+   * If set to true, cancels the explosion event.
+   *
+   */
+  cancel: boolean;
+  /**
+   * @remarks
+   * Updates a collection of blocks impacted by this explosion
+   * event.
+   *
+   * @param blocks
+   * New list of blocks that are impacted by this explosion.
+   */
+  setImpactedBlocks(blocks: Block[]): void;
+}
+
+/**
+ * Manages callbacks that are connected to before an explosion
+ * occurs.
+ */
+export class ExplosionBeforeEventSignal {
+  private constructor();
+  /**
+   * @remarks
+   * Adds a callback that will be called when before an explosion
+   * occurs. The callback can optionally change or cancel
+   * explosion behavior.
+   *
+   * This function can't be called in read-only mode.
+   *
+   */
+  subscribe(callback: (arg: ExplosionBeforeEvent) => void): (arg: ExplosionBeforeEvent) => void;
+  /**
+   * @remarks
+   * Removes a callback from being called from before when an
+   * explosion would occur.
+   *
+   * This function can't be called in read-only mode.
+   *
+   * @throws This function can throw errors.
+   */
+  unsubscribe(callback: (arg: ExplosionBeforeEvent) => void): void;
+}
+
+/**
  * As part of the Healable component, represents a specific
  * item that can be fed to an entity to cause health effects.
  */
@@ -4012,7 +4390,7 @@ export class ItemReleaseUseAfterEvent {
    * Returns the item stack that triggered this item event.
    *
    */
-  readonly itemStack: ItemStack;
+  readonly itemStack?: ItemStack;
   /**
    * @remarks
    * Returns the source entity that triggered this item event.
@@ -5657,21 +6035,40 @@ export class PlayerLeaveAfterEventSignal extends IPlayerLeaveAfterEventSignal {
   private constructor();
 }
 
+/**
+ * Contains information regarding a player that is leaving the
+ * world.
+ */
 export class PlayerLeaveBeforeEvent {
   private constructor();
+  /**
+   * @remarks
+   * The leaving player.
+   *
+   */
   readonly player: Player;
 }
 
+/**
+ * Manages callbacks that are connected to a player leaving the
+ * world.
+ */
 export class PlayerLeaveBeforeEventSignal {
   private constructor();
   /**
    * @remarks
+   * Adds a callback that will be called when a player leaves the
+   * world.
+   *
    * This function can't be called in read-only mode.
    *
    */
   subscribe(callback: (arg: PlayerLeaveBeforeEvent) => void): (arg: PlayerLeaveBeforeEvent) => void;
   /**
    * @remarks
+   * Removes a callback that will be called when a player leaves
+   * the world.
+   *
    * This function can't be called in read-only mode.
    *
    * @throws This function can throw errors.
@@ -6022,7 +6419,7 @@ export class Scoreboard {
    *
    * @throws This function can throw errors.
    */
-  addObjective(objectiveId: string, displayName: string): ScoreboardObjective;
+  addObjective(objectiveId: string, displayName?: string): ScoreboardObjective;
   /**
    * @remarks
    * Clears the objective that occupies a display slot.
@@ -7077,6 +7474,14 @@ export class WorldAfterEvents {
   readonly buttonPush: ButtonPushAfterEventSignal;
   /**
    * @remarks
+   * This event is fired when an entity event has been triggered
+   * that will update the component definition state of an
+   * entity.
+   *
+   */
+  readonly dataDrivenEntityTrigger: DataDrivenEntityTriggerAfterEventSignal;
+  /**
+   * @remarks
    * This event fires when an entity dies.
    *
    */
@@ -7503,6 +7908,27 @@ export interface CameraSetRotOptions {
 }
 
 /**
+ * Contains a set of updates to the component definition state
+ * of an entity.
+ */
+export interface DefinitionModifier {
+  /**
+   * @remarks
+   * Retrieves the list of component groups that will be added
+   * via this definition modification.
+   *
+   */
+  addedComponentGroups: string[];
+  /**
+   * @remarks
+   * The list of component groups that will be removed via this
+   * definition modification.
+   *
+   */
+  removedComponentGroups: string[];
+}
+
+/**
  * An exact coordinate within the world, including its
  * dimension and location.
  */
@@ -7593,6 +8019,35 @@ export interface EntityDamageSource {
    *
    */
   damagingProjectile?: Entity;
+}
+
+/**
+ * Specifies additional filters that are used in registering a
+ * data driven trigger event for entities.
+ */
+export interface EntityDataDrivenTriggerEventOptions {
+  /**
+   * @remarks
+   * If this value is set, this event will only fire for entities
+   * that match the entities within this collection.
+   *
+   */
+  entities?: Entity[];
+  /**
+   * @remarks
+   * If this value is set, this event will only fire if the
+   * impacted entities' type matches this parameter.
+   *
+   */
+  entityTypes?: string[];
+  /**
+   * @remarks
+   * If this value is set, this event will only fire if the
+   * impacted triggered event matches one of the events listed in
+   * this parameter.
+   *
+   */
+  eventTypes?: string[];
 }
 
 /**
@@ -8013,7 +8468,8 @@ export interface RGB {
 /**
  * Represents a fully customizable color within Minecraft.
  */
-export interface RGBA {
+// @ts-ignore Class inheritance allowed for native defined classes
+export interface RGBA extends RGB {
   /**
    * @remarks
    * Determines a color's alpha (opacity) component. Valid values
@@ -8021,27 +8477,6 @@ export interface RGBA {
    *
    */
   alpha: number;
-  /**
-   * @remarks
-   * Determines a color's blue component. Valid values are
-   * between 0 and 1.0.
-   *
-   */
-  blue: number;
-  /**
-   * @remarks
-   * Determines a color's green component. Valid values are
-   * between 0 and 1.0.
-   *
-   */
-  green: number;
-  /**
-   * @remarks
-   * Determines a color's red component. Valid values are between
-   * 0 and 1.0.
-   *
-   */
-  red: number;
 }
 
 /**
